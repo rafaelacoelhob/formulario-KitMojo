@@ -24,13 +24,12 @@
             background: #fff;
             border-radius: 16px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             overflow: hidden;
             height: fit-content;
         }
 
-        /* Cabeçalho */
         .header {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             color: #fff;
@@ -38,24 +37,60 @@
             text-align: center;
         }
 
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 4px;
-            letter-spacing: 1px;
+        .header h1 { font-size: 28px; margin-bottom: 4px; letter-spacing: 1px; }
+        .header p { font-size: 14px; opacity: 0.7; }
+
+        /* Abas */
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
         }
 
-        .header p {
-            font-size: 14px;
-            opacity: 0.7;
+        .tab-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #1a1a2e;
+            background: #fff;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #1a73e8;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #eee;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 24px;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         /* Formulário */
-        .form-body {
-            padding: 0 24px 30px;
-        }
-
         .form-group {
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
@@ -89,7 +124,119 @@
             background: #fff;
         }
 
-        /* Área da câmera */
+        /* Checklist */
+        .checklist-section {
+            margin-bottom: 20px;
+        }
+
+        .checklist-section > label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #fafafa;
+            border: 2px solid #e8e8e8;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .check-item:hover {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+        .check-item.checked {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+
+        .check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #2e7d32;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .check-item span {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.3;
+        }
+
+        /* Seção iPhone */
+        .iphone-section {
+            margin-bottom: 20px;
+        }
+
+        .iphone-section > label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .iphone-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .iphone-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            background: #fafafa;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .iphone-option:hover {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+        .iphone-option.selected {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+        .iphone-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #1a73e8;
+            cursor: pointer;
+        }
+
+        .iphone-option span {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Câmera */
         .camera-area {
             border: 3px dashed #ccc;
             border-radius: 12px;
@@ -99,17 +246,10 @@
             transition: border-color 0.3s;
         }
 
-        .camera-area.active {
-            border-color: #1a73e8;
-            background: #e8f0fe;
-        }
+        .camera-area.active { border-color: #1a73e8; background: #e8f0fe; }
+        .camera-area.has-photo { border-color: #2e7d32; background: #e8f5e9; }
 
-        .camera-area.has-photo {
-            border-color: #2e7d32;
-            background: #e8f5e9;
-        }
-
-        #videoElement {
+        .camera-area video {
             width: 100%;
             max-width: 400px;
             border-radius: 8px;
@@ -117,13 +257,10 @@
             margin: 0 auto;
         }
 
-        #canvasElement {
-            display: none;
-        }
+        .camera-area canvas { display: none; }
 
         .photo-preview {
             display: none;
-            position: relative;
             max-width: 400px;
             margin: 0 auto;
         }
@@ -148,37 +285,12 @@
             margin: 8px 4px;
         }
 
-        .btn-abrir-camera {
-            background: #1a73e8;
-            color: #fff;
-        }
-
-        .btn-abrir-camera:hover {
-            background: #1557b0;
-            transform: translateY(-1px);
-        }
-
-        .btn-tirar-foto {
-            background: #2e7d32;
-            color: #fff;
-            display: none;
-        }
-
-        .btn-tirar-foto:hover {
-            background: #1b5e20;
-            transform: translateY(-1px);
-        }
-
-        .btn-nova-foto {
-            background: #e53935;
-            color: #fff;
-            display: none;
-        }
-
-        .btn-nova-foto:hover {
-            background: #c62828;
-            transform: translateY(-1px);
-        }
+        .btn-abrir { background: #1a73e8; color: #fff; }
+        .btn-abrir:hover { background: #1557b0; }
+        .btn-tirar { background: #2e7d32; color: #fff; display: none; }
+        .btn-tirar:hover { background: #1b5e20; }
+        .btn-nova { background: #e53935; color: #fff; display: none; }
+        .btn-nova:hover { background: #c62828; }
 
         .camera-placeholder {
             color: #999;
@@ -212,28 +324,20 @@
             box-shadow: 0 6px 20px rgba(26,26,46,0.4);
         }
 
-        .btn-enviar:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Mensagem de sucesso */
+        /* Sucesso */
         .sucesso-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.6);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
 
-        .sucesso-overlay.show {
-            display: flex;
-        }
+        .sucesso-overlay.show { display: flex; }
 
         .sucesso-card {
             background: #fff;
@@ -245,21 +349,9 @@
             animation: fadeInUp 0.4s ease;
         }
 
-        .sucesso-card .check {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-
-        .sucesso-card h2 {
-            color: #2e7d32;
-            margin-bottom: 8px;
-        }
-
-        .sucesso-card p {
-            color: #666;
-            margin-bottom: 20px;
-        }
-
+        .sucesso-card .check { font-size: 64px; margin-bottom: 16px; }
+        .sucesso-card h2 { color: #2e7d32; margin-bottom: 8px; }
+        .sucesso-card p { color: #666; margin-bottom: 20px; }
         .sucesso-card button {
             padding: 12px 32px;
             background: #2e7d32;
@@ -275,216 +367,480 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Responsivo */
-        @media (max-width: 480px) {
+        /* Separador */
+        .separator {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 20px 0;
+        }
+
+        /* Marcar/Desmarcar todos */
+        .check-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-check-action {
+            padding: 6px 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .btn-check-action:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        @media (max-width: 520px) {
             body { padding: 10px; }
             .header { padding: 20px 16px; }
             .header h1 { font-size: 22px; }
-            .form-body { padding: 0 16px 24px; }
+            .tab-content { padding: 16px; }
+            .checklist-grid { grid-template-columns: 1fr; }
+            .iphone-options { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Cabeçalho -->
     <div class="header">
         <h1>KitMojo</h1>
-        <p>Formulário de Registro</p>
+        <p>Controle de Entrega e Devolução</p>
     </div>
 
-    <!-- Formulário -->
-    <form id="formKitMojo" class="form-body" style="padding-top: 24px;">
-        <!-- Nome de quem retirou -->
-        <div class="form-group">
-            <label for="nomeRetirou">Nome de quem retirou <span class="obrigatorio">*</span></label>
-            <input type="text" id="nomeRetirou" placeholder="Digite o nome de quem retirou" required>
-        </div>
+    <!-- Abas -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="trocarAba('entrega')">Entrega</button>
+        <button class="tab-btn" onclick="trocarAba('devolucao')">Devolução</button>
+    </div>
 
-        <!-- Nome de quem recebeu -->
-        <div class="form-group">
-            <label for="nomeRecebeu">Nome de quem entregou <span class="obrigatorio">*</span></label>
-            <input type="text" id="nomeRecebeu" placeholder="Digite o nome de quem recebeu" required>
-        </div>
+    <!-- ==================== ABA ENTREGA ==================== -->
+    <div class="tab-content active" id="tab-entrega">
+        <form id="formEntrega" onsubmit="enviarForm(event, 'entrega')">
+            <div class="form-group">
+                <label for="entrega-quemEntregou">Nome de quem entregou <span class="obrigatorio">*</span></label>
+                <input type="text" id="entrega-quemEntregou" placeholder="Digite o nome de quem entregou o kit" required>
+            </div>
 
-        <!-- Tipo do KitMojo -->
-        <div class="form-group">
-            <label for="tipoKit">Tipo do KitMojo <span class="obrigatorio">*</span></label>
-            <select id="tipoKit" required>
-                <option value="" disabled selected>Selecione o tipo</option>
-                <option value="LiveMode">LiveMode</option>
-                <option value="Alugado">Alugado</option>
-            </select>
-        </div>
+            <div class="form-group">
+                <label for="entrega-quemRetirou">Nome de quem retirou <span class="obrigatorio">*</span></label>
+                <input type="text" id="entrega-quemRetirou" placeholder="Digite o nome de quem retirou o kit" required>
+            </div>
 
-        <!-- Foto do KitMojo -->
-        <div class="form-group">
-            <label>Foto do KitMojo <span class="obrigatorio">*</span></label>
-            <div class="camera-area" id="cameraArea">
-                <div class="camera-placeholder" id="cameraPlaceholder">
-                    <span class="icon">&#128247;</span>
-                    Tire uma foto do KitMojo
-                </div>
+            <div class="form-group">
+                <label for="entrega-tipoKit">Tipo do KitMojo <span class="obrigatorio">*</span></label>
+                <select id="entrega-tipoKit" required>
+                    <option value="" disabled selected>Selecione o tipo</option>
+                    <option value="LiveMode">LiveMode</option>
+                    <option value="Alugado">Alugado</option>
+                </select>
+            </div>
 
-                <video id="videoElement" autoplay playsinline></video>
-                <canvas id="canvasElement"></canvas>
+            <div class="separator"></div>
 
-                <div class="photo-preview" id="photoPreview">
-                    <img id="photoImg" src="" alt="Foto do KitMojo">
-                </div>
-
-                <div>
-                    <button type="button" class="btn-camera btn-abrir-camera" id="btnAbrirCamera" onclick="abrirCamera()">
-                        &#128247; Abrir Câmera
-                    </button>
-                    <button type="button" class="btn-camera btn-tirar-foto" id="btnTirarFoto" onclick="tirarFoto()">
-                        &#128248; Tirar Foto
-                    </button>
-                    <button type="button" class="btn-camera btn-nova-foto" id="btnNovaFoto" onclick="novaFoto()">
-                        &#128260; Nova Foto
-                    </button>
+            <!-- iPhone -->
+            <div class="iphone-section">
+                <label>Modelo do iPhone no Kit <span class="obrigatorio">*</span></label>
+                <div class="iphone-options">
+                    <label class="iphone-option" onclick="selecionarIphone(this, 'entrega')">
+                        <input type="radio" name="entrega-iphone" value="iPhone 15 Pro" required>
+                        <span>iPhone 15 Pro</span>
+                    </label>
+                    <label class="iphone-option" onclick="selecionarIphone(this, 'entrega')">
+                        <input type="radio" name="entrega-iphone" value="iPhone 16">
+                        <span>iPhone 16</span>
+                    </label>
                 </div>
             </div>
-        </div>
 
-        <!-- Botão Enviar -->
-        <button type="submit" class="btn-enviar" id="btnEnviar" disabled>Enviar Formulário</button>
-    </form>
+            <div class="separator"></div>
+
+            <!-- Checklist -->
+            <div class="checklist-section">
+                <label>Itens do Kit <span class="obrigatorio">*</span></label>
+                <div class="check-actions">
+                    <button type="button" class="btn-check-action" onclick="marcarTodos('entrega')">Marcar todos</button>
+                    <button type="button" class="btn-check-action" onclick="desmarcarTodos('entrega')">Desmarcar todos</button>
+                </div>
+                <div class="checklist-grid" id="checklist-entrega"></div>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Foto -->
+            <div class="form-group">
+                <label>Foto do KitMojo <span class="obrigatorio">*</span></label>
+                <div class="camera-area" id="cameraArea-entrega">
+                    <div class="camera-placeholder" id="placeholder-entrega">
+                        <span class="icon">&#128247;</span>
+                        Tire uma foto do KitMojo
+                    </div>
+                    <video id="video-entrega" autoplay playsinline></video>
+                    <canvas id="canvas-entrega"></canvas>
+                    <div class="photo-preview" id="preview-entrega">
+                        <img id="img-entrega" src="" alt="Foto do KitMojo">
+                    </div>
+                    <div>
+                        <button type="button" class="btn-camera btn-abrir" onclick="abrirCamera('entrega')">&#128247; Abrir Câmera</button>
+                        <button type="button" class="btn-camera btn-tirar" id="btnTirar-entrega" onclick="tirarFoto('entrega')">&#128248; Tirar Foto</button>
+                        <button type="button" class="btn-camera btn-nova" id="btnNova-entrega" onclick="novaFoto('entrega')">&#128260; Nova Foto</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-enviar" id="btnEnviar-entrega" disabled>Enviar Entrega</button>
+        </form>
+    </div>
+
+    <!-- ==================== ABA DEVOLUÇÃO ==================== -->
+    <div class="tab-content" id="tab-devolucao">
+        <form id="formDevolucao" onsubmit="enviarForm(event, 'devolucao')">
+            <div class="form-group">
+                <label for="devolucao-quemEstava">Nome de quem estava com o kit <span class="obrigatorio">*</span></label>
+                <input type="text" id="devolucao-quemEstava" placeholder="Digite o nome de quem estava com o kit" required>
+            </div>
+
+            <div class="form-group">
+                <label for="devolucao-quemPegou">Nome de quem pegou de volta <span class="obrigatorio">*</span></label>
+                <input type="text" id="devolucao-quemPegou" placeholder="Digite o nome de quem pegou de volta" required>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- iPhone -->
+            <div class="iphone-section">
+                <label>Modelo do iPhone no Kit <span class="obrigatorio">*</span></label>
+                <div class="iphone-options">
+                    <label class="iphone-option" onclick="selecionarIphone(this, 'devolucao')">
+                        <input type="radio" name="devolucao-iphone" value="iPhone 15 Pro" required>
+                        <span>iPhone 15 Pro</span>
+                    </label>
+                    <label class="iphone-option" onclick="selecionarIphone(this, 'devolucao')">
+                        <input type="radio" name="devolucao-iphone" value="iPhone 16">
+                        <span>iPhone 16</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Checklist -->
+            <div class="checklist-section">
+                <label>Itens do Kit <span class="obrigatorio">*</span></label>
+                <div class="check-actions">
+                    <button type="button" class="btn-check-action" onclick="marcarTodos('devolucao')">Marcar todos</button>
+                    <button type="button" class="btn-check-action" onclick="desmarcarTodos('devolucao')">Desmarcar todos</button>
+                </div>
+                <div class="checklist-grid" id="checklist-devolucao"></div>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Foto -->
+            <div class="form-group">
+                <label>Foto do KitMojo <span class="obrigatorio">*</span></label>
+                <div class="camera-area" id="cameraArea-devolucao">
+                    <div class="camera-placeholder" id="placeholder-devolucao">
+                        <span class="icon">&#128247;</span>
+                        Tire uma foto do KitMojo
+                    </div>
+                    <video id="video-devolucao" autoplay playsinline></video>
+                    <canvas id="canvas-devolucao"></canvas>
+                    <div class="photo-preview" id="preview-devolucao">
+                        <img id="img-devolucao" src="" alt="Foto do KitMojo">
+                    </div>
+                    <div>
+                        <button type="button" class="btn-camera btn-abrir" onclick="abrirCamera('devolucao')">&#128247; Abrir Câmera</button>
+                        <button type="button" class="btn-camera btn-tirar" id="btnTirar-devolucao" onclick="tirarFoto('devolucao')">&#128248; Tirar Foto</button>
+                        <button type="button" class="btn-camera btn-nova" id="btnNova-devolucao" onclick="novaFoto('devolucao')">&#128260; Nova Foto</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-enviar" id="btnEnviar-devolucao" disabled>Enviar Devolução</button>
+        </form>
+    </div>
 </div>
 
 <!-- Overlay de Sucesso -->
 <div class="sucesso-overlay" id="sucessoOverlay">
     <div class="sucesso-card">
         <div class="check">&#9989;</div>
-        <h2>Enviado com Sucesso!</h2>
-        <p>Seu registro do KitMojo foi realizado.</p>
+        <h2 id="sucessoTitulo">Enviado com Sucesso!</h2>
+        <p id="sucessoMsg">Registro realizado.</p>
         <button onclick="resetarFormulario()">Novo Registro</button>
     </div>
 </div>
 
 <script>
-    let stream = null;
-    let fotoCapturada = false;
+    // Lista de itens do checklist
+    const itensKit = [
+        'Samsung',
+        'SmartRig Completo',
+        'Conjunto Microfone DJI (Sem Fio)',
+        'Microfone de Mão com Fio',
+        'Cabo XLR para USB-C',
+        'Estação de Carregamento',
+        'Bastão de Microfone',
+        'Cabos USB-C',
+        'Cabo Mini P2',
+        'Powerbank',
+        'Tripé 1.70M',
+        'Mochila do Tripé',
+        'Mochila de Transporte do Kit',
+        'Espuma',
+        'Fone sem Fio',
+        'Fone com Fio',
+        'Cabo Adaptador de Áudio',
+        'Luz de Vídeo LED',
+        'Tripé Rotativo',
+        'Cabo Áudio e Vídeo'
+    ];
 
-    const video = document.getElementById('videoElement');
-    const canvas = document.getElementById('canvasElement');
-    const photoPreview = document.getElementById('photoPreview');
-    const photoImg = document.getElementById('photoImg');
-    const btnAbrirCamera = document.getElementById('btnAbrirCamera');
-    const btnTirarFoto = document.getElementById('btnTirarFoto');
-    const btnNovaFoto = document.getElementById('btnNovaFoto');
-    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
-    const cameraArea = document.getElementById('cameraArea');
-    const btnEnviar = document.getElementById('btnEnviar');
-
-    function validarFormulario() {
-        const nomeRetirou = document.getElementById('nomeRetirou').value.trim();
-        const nomeRecebeu = document.getElementById('nomeRecebeu').value.trim();
-        const tipoKit = document.getElementById('tipoKit').value;
-
-        btnEnviar.disabled = !(nomeRetirou && nomeRecebeu && tipoKit && fotoCapturada);
+    // Gerar checklists nas duas abas
+    function gerarChecklist(tabId) {
+        const container = document.getElementById('checklist-' + tabId);
+        itensKit.forEach((item, i) => {
+            const id = tabId + '-item-' + i;
+            const div = document.createElement('label');
+            div.className = 'check-item';
+            div.setAttribute('for', id);
+            div.innerHTML = `<input type="checkbox" id="${id}" value="${item}" onchange="toggleCheckItem(this)"><span>${item}</span>`;
+            container.appendChild(div);
+        });
     }
 
-    document.getElementById('nomeRetirou').addEventListener('input', validarFormulario);
-    document.getElementById('nomeRecebeu').addEventListener('input', validarFormulario);
-    document.getElementById('tipoKit').addEventListener('change', validarFormulario);
+    gerarChecklist('entrega');
+    gerarChecklist('devolucao');
 
-    async function abrirCamera() {
+    // Visual do check item
+    function toggleCheckItem(cb) {
+        const parent = cb.closest('.check-item');
+        if (cb.checked) {
+            parent.classList.add('checked');
+        } else {
+            parent.classList.remove('checked');
+        }
+        validarFormulario(cb.id.startsWith('entrega') ? 'entrega' : 'devolucao');
+    }
+
+    // Marcar/Desmarcar todos
+    function marcarTodos(tab) {
+        document.querySelectorAll('#checklist-' + tab + ' input[type="checkbox"]').forEach(cb => {
+            cb.checked = true;
+            cb.closest('.check-item').classList.add('checked');
+        });
+        validarFormulario(tab);
+    }
+
+    function desmarcarTodos(tab) {
+        document.querySelectorAll('#checklist-' + tab + ' input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.check-item').classList.remove('checked');
+        });
+        validarFormulario(tab);
+    }
+
+    // iPhone seleção visual
+    function selecionarIphone(el, tab) {
+        document.querySelectorAll('#tab-' + tab + ' .iphone-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        validarFormulario(tab);
+    }
+
+    // Trocar abas
+    function trocarAba(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        if (tab === 'entrega') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        }
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // Câmera por aba
+    const streams = { entrega: null, devolucao: null };
+    const fotos = { entrega: false, devolucao: false };
+
+    async function abrirCamera(tab) {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({
+            const s = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
             });
-            video.srcObject = stream;
+            streams[tab] = s;
+            const video = document.getElementById('video-' + tab);
+            video.srcObject = s;
             video.style.display = 'block';
-            cameraPlaceholder.style.display = 'none';
-            btnAbrirCamera.style.display = 'none';
-            btnTirarFoto.style.display = 'inline-flex';
-            cameraArea.classList.add('active');
+            document.getElementById('placeholder-' + tab).style.display = 'none';
+            // Esconder botão abrir, mostrar tirar
+            const area = document.getElementById('cameraArea-' + tab);
+            area.querySelector('.btn-abrir').style.display = 'none';
+            document.getElementById('btnTirar-' + tab).style.display = 'inline-flex';
+            area.classList.add('active');
         } catch (err) {
-            alert('Erro ao acessar a câmera. Verifique as permissões do navegador.\n\nDica: Em celulares, use o navegador Chrome ou Safari.');
-            console.error('Erro câmera:', err);
+            alert('Erro ao acessar a câmera. Verifique as permissões do navegador.');
         }
     }
 
-    function tirarFoto() {
+    function tirarFoto(tab) {
+        const video = document.getElementById('video-' + tab);
+        const canvas = document.getElementById('canvas-' + tab);
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
+        canvas.getContext('2d').drawImage(video, 0, 0);
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        photoImg.src = dataUrl;
-        photoPreview.style.display = 'block';
+        document.getElementById('img-' + tab).src = dataUrl;
+        document.getElementById('preview-' + tab).style.display = 'block';
 
-        // Parar câmera
-        pararCamera();
-
+        pararCamera(tab);
         video.style.display = 'none';
-        btnTirarFoto.style.display = 'none';
-        btnNovaFoto.style.display = 'inline-flex';
-        cameraArea.classList.remove('active');
-        cameraArea.classList.add('has-photo');
+        document.getElementById('btnTirar-' + tab).style.display = 'none';
+        document.getElementById('btnNova-' + tab).style.display = 'inline-flex';
 
-        fotoCapturada = true;
-        validarFormulario();
+        const area = document.getElementById('cameraArea-' + tab);
+        area.classList.remove('active');
+        area.classList.add('has-photo');
+
+        fotos[tab] = true;
+        validarFormulario(tab);
     }
 
-    function novaFoto() {
-        photoPreview.style.display = 'none';
-        photoImg.src = '';
-        btnNovaFoto.style.display = 'none';
-        cameraArea.classList.remove('has-photo');
-        fotoCapturada = false;
-        validarFormulario();
-        abrirCamera();
+    function novaFoto(tab) {
+        document.getElementById('preview-' + tab).style.display = 'none';
+        document.getElementById('img-' + tab).src = '';
+        document.getElementById('btnNova-' + tab).style.display = 'none';
+        document.getElementById('cameraArea-' + tab).classList.remove('has-photo');
+        fotos[tab] = false;
+        validarFormulario(tab);
+        abrirCamera(tab);
     }
 
-    function pararCamera() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
+    function pararCamera(tab) {
+        if (streams[tab]) {
+            streams[tab].getTracks().forEach(t => t.stop());
+            streams[tab] = null;
         }
     }
 
-    // Envio do formulário
-    document.getElementById('formKitMojo').addEventListener('submit', function(e) {
+    // Validação
+    function validarFormulario(tab) {
+        if (tab === 'entrega') {
+            const nome1 = document.getElementById('entrega-quemEntregou').value.trim();
+            const nome2 = document.getElementById('entrega-quemRetirou').value.trim();
+            const tipo = document.getElementById('entrega-tipoKit').value;
+            const iphone = document.querySelector('input[name="entrega-iphone"]:checked');
+            const checks = document.querySelectorAll('#checklist-entrega input:checked').length;
+            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && iphone && checks > 0 && fotos.entrega);
+        } else {
+            const nome1 = document.getElementById('devolucao-quemEstava').value.trim();
+            const nome2 = document.getElementById('devolucao-quemPegou').value.trim();
+            const iphone = document.querySelector('input[name="devolucao-iphone"]:checked');
+            const checks = document.querySelectorAll('#checklist-devolucao input:checked').length;
+            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && iphone && checks > 0 && fotos.devolucao);
+        }
+    }
+
+    // Listeners de validação
+    ['entrega-quemEntregou', 'entrega-quemRetirou'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => validarFormulario('entrega'));
+    });
+    document.getElementById('entrega-tipoKit').addEventListener('change', () => validarFormulario('entrega'));
+
+    ['devolucao-quemEstava', 'devolucao-quemPegou'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => validarFormulario('devolucao'));
+    });
+
+    // Enviar
+    function enviarForm(e, tab) {
         e.preventDefault();
 
-        if (!fotoCapturada) {
-            alert('Por favor, tire uma foto do KitMojo.');
-            return;
-        }
+        let dados = {};
 
-        const dados = {
-            nomeRetirou: document.getElementById('nomeRetirou').value.trim(),
-            nomeRecebeu: document.getElementById('nomeRecebeu').value.trim(),
-            tipoKit: document.getElementById('tipoKit').value,
-            foto: photoImg.src,
-            dataHora: new Date().toLocaleString('pt-BR')
-        };
+        if (tab === 'entrega') {
+            const checkedItems = [...document.querySelectorAll('#checklist-entrega input:checked')].map(c => c.value);
+            dados = {
+                tipo: 'ENTREGA',
+                quemEntregou: document.getElementById('entrega-quemEntregou').value.trim(),
+                quemRetirou: document.getElementById('entrega-quemRetirou').value.trim(),
+                tipoKit: document.getElementById('entrega-tipoKit').value,
+                iphone: document.querySelector('input[name="entrega-iphone"]:checked').value,
+                itensConferidos: checkedItems,
+                itensFaltando: itensKit.filter(i => !checkedItems.includes(i)),
+                foto: document.getElementById('img-entrega').src,
+                dataHora: new Date().toLocaleString('pt-BR')
+            };
+            document.getElementById('sucessoTitulo').textContent = 'Entrega Registrada!';
+            document.getElementById('sucessoMsg').textContent = 'A entrega do KitMojo foi registrada com sucesso.';
+        } else {
+            const checkedItems = [...document.querySelectorAll('#checklist-devolucao input:checked')].map(c => c.value);
+            dados = {
+                tipo: 'DEVOLUÇÃO',
+                quemEstava: document.getElementById('devolucao-quemEstava').value.trim(),
+                quemPegouDeVolta: document.getElementById('devolucao-quemPegou').value.trim(),
+                iphone: document.querySelector('input[name="devolucao-iphone"]:checked').value,
+                itensDevolvidos: checkedItems,
+                itensFaltando: itensKit.filter(i => !checkedItems.includes(i)),
+                foto: document.getElementById('img-devolucao').src,
+                dataHora: new Date().toLocaleString('pt-BR')
+            };
+            document.getElementById('sucessoTitulo').textContent = 'Devolução Registrada!';
+            document.getElementById('sucessoMsg').textContent = 'A devolução do KitMojo foi registrada com sucesso.';
+        }
 
         console.log('Dados do formulário:', dados);
 
-        // Mostrar sucesso
+        if (dados.itensFaltando.length > 0) {
+            console.warn('ITENS FALTANDO:', dados.itensFaltando);
+        }
+
         document.getElementById('sucessoOverlay').classList.add('show');
-    });
+    }
 
     function resetarFormulario() {
-        document.getElementById('formKitMojo').reset();
-        photoPreview.style.display = 'none';
-        photoImg.src = '';
-        btnNovaFoto.style.display = 'none';
-        btnAbrirCamera.style.display = 'inline-flex';
-        cameraPlaceholder.style.display = 'block';
-        cameraArea.classList.remove('has-photo', 'active');
-        fotoCapturada = false;
-        btnEnviar.disabled = true;
-        pararCamera();
+        document.getElementById('formEntrega').reset();
+        document.getElementById('formDevolucao').reset();
+
+        ['entrega', 'devolucao'].forEach(tab => {
+            // Reset foto
+            document.getElementById('preview-' + tab).style.display = 'none';
+            document.getElementById('img-' + tab).src = '';
+            document.getElementById('btnNova-' + tab).style.display = 'none';
+            document.getElementById('btnTirar-' + tab).style.display = 'none';
+            const area = document.getElementById('cameraArea-' + tab);
+            area.querySelector('.btn-abrir').style.display = 'inline-flex';
+            area.classList.remove('has-photo', 'active');
+            document.getElementById('placeholder-' + tab).style.display = 'block';
+            fotos[tab] = false;
+            pararCamera(tab);
+
+            // Reset checks
+            document.querySelectorAll('#checklist-' + tab + ' .check-item').forEach(c => c.classList.remove('checked'));
+
+            // Reset iphone
+            document.querySelectorAll('#tab-' + tab + ' .iphone-option').forEach(o => o.classList.remove('selected'));
+
+            // Reset botão
+            document.getElementById('btnEnviar-' + tab).disabled = true;
+        });
+
         document.getElementById('sucessoOverlay').classList.remove('show');
     }
 
-    // Limpar câmera ao sair da página
-    window.addEventListener('beforeunload', pararCamera);
+    window.addEventListener('beforeunload', () => {
+        pararCamera('entrega');
+        pararCamera('devolucao');
+    });
 </script>
 
 </body>
