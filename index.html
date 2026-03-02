@@ -512,6 +512,15 @@
                 <input type="text" id="devolucao-quemPegou" placeholder="Digite o nome de quem pegou de volta" required>
             </div>
 
+            <div class="form-group">
+                <label for="devolucao-tipoKit">Tipo do KitMojo <span class="obrigatorio">*</span></label>
+                <select id="devolucao-tipoKit" required>
+                    <option value="" disabled selected>Selecione o tipo</option>
+                    <option value="LiveMode">LiveMode</option>
+                    <option value="Alugado">Alugado</option>
+                </select>
+            </div>
+
             <div class="separator"></div>
 
             <!-- iPhone -->
@@ -745,9 +754,10 @@
         } else {
             const nome1 = document.getElementById('devolucao-quemEstava').value.trim();
             const nome2 = document.getElementById('devolucao-quemPegou').value.trim();
+            const tipo = document.getElementById('devolucao-tipoKit').value;
             const iphone = document.querySelector('input[name="devolucao-iphone"]:checked');
             const checks = document.querySelectorAll('#checklist-devolucao input:checked').length;
-            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && iphone && checks > 0 && fotos.devolucao);
+            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && tipo && iphone && checks > 0 && fotos.devolucao);
         }
     }
 
@@ -760,6 +770,7 @@
     ['devolucao-quemEstava', 'devolucao-quemPegou'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => validarFormulario('devolucao'));
     });
+    document.getElementById('devolucao-tipoKit').addEventListener('change', () => validarFormulario('devolucao'));
 
     // Enviar
     function enviarForm(e, tab) {
@@ -788,6 +799,7 @@
                 tipo: 'DEVOLUÇÃO',
                 quemEstava: document.getElementById('devolucao-quemEstava').value.trim(),
                 quemPegouDeVolta: document.getElementById('devolucao-quemPegou').value.trim(),
+                tipoKit: document.getElementById('devolucao-tipoKit').value,
                 iphone: document.querySelector('input[name="devolucao-iphone"]:checked').value,
                 itensDevolvidos: checkedItems,
                 itensFaltando: itensKit.filter(i => !checkedItems.includes(i)),
