@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário KitMojo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+            height: fit-content;
+        }
+
+        /* Cabeçalho */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            padding: 30px 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Formulário */
+        .form-body {
+            padding: 0 24px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group label .obrigatorio {
+            color: #e53935;
+        }
+
+        .form-group input[type="text"],
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+            background: #fafafa;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group select:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+            background: #fff;
+        }
+
+        /* Área da câmera */
+        .camera-area {
+            border: 3px dashed #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: #fafafa;
+            transition: border-color 0.3s;
+        }
+
+        .camera-area.active {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+        .camera-area.has-photo {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+
+        #videoElement {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            display: none;
+            margin: 0 auto;
+        }
+
+        #canvasElement {
+            display: none;
+        }
+
+        .photo-preview {
+            display: none;
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .btn-camera {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 8px 4px;
+        }
+
+        .btn-abrir-camera {
+            background: #1a73e8;
+            color: #fff;
+        }
+
+        .btn-abrir-camera:hover {
+            background: #1557b0;
+            transform: translateY(-1px);
+        }
+
+        .btn-tirar-foto {
+            background: #2e7d32;
+            color: #fff;
+            display: none;
+        }
+
+        .btn-tirar-foto:hover {
+            background: #1b5e20;
+            transform: translateY(-1px);
+        }
+
+        .btn-nova-foto {
+            background: #e53935;
+            color: #fff;
+            display: none;
+        }
+
+        .btn-nova-foto:hover {
+            background: #c62828;
+            transform: translateY(-1px);
+        }
+
+        .camera-placeholder {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .camera-placeholder .icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Botão enviar */
+        .btn-enviar {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        .btn-enviar:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(26,26,46,0.4);
+        }
+
+        .btn-enviar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Mensagem de sucesso */
+        .sucesso-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .sucesso-overlay.show {
+            display: flex;
+        }
+
+        .sucesso-card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            margin: 20px;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .sucesso-card .check {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .sucesso-card h2 {
+            color: #2e7d32;
+            margin-bottom: 8px;
+        }
+
+        .sucesso-card p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .sucesso-card button {
+            padding: 12px 32px;
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsivo */
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .header { padding: 20px 16px; }
+            .header h1 { font-size: 22px; }
+            .form-body { padding: 0 16px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Cabeçalho -->
+    <div class="header">
+        <h1>KitMojo</h1>
+        <p>Formulário de Registro</p>
+    </div>
+
+    <!-- Formulário -->
+    <form id="formKitMojo" class="form-body" style="padding-top: 24px;">
+        <!-- Nome de quem retirou -->
+        <div class="form-group">
+            <label for="nomeRetirou">Nome de quem retirou <span class="obrigatorio">*</span></label>
+            <input type="text" id="nomeRetirou" placeholder="Digite o nome de quem retirou" required>
+        </div>
+
+        <!-- Nome de quem recebeu -->
+        <div class="form-group">
+            <label for="nomeRecebeu">Nome de quem recebeu <span class="obrigatorio">*</span></label>
+            <input type="text" id="nomeRecebeu" placeholder="Digite o nome de quem recebeu" required>
+        </div>
+
+        <!-- Tipo do KitMojo -->
+        <div class="form-group">
+            <label for="tipoKit">Tipo do KitMojo <span class="obrigatorio">*</span></label>
+            <select id="tipoKit" required>
+                <option value="" disabled selected>Selecione o tipo</option>
+                <option value="LiveMode">LiveMode</option>
+                <option value="Alugado">Alugado</option>
+            </select>
+        </div>
+
+        <!-- Foto do KitMojo -->
+        <div class="form-group">
+            <label>Foto do KitMojo <span class="obrigatorio">*</span></label>
+            <div class="camera-area" id="cameraArea">
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                    <span class="icon">&#128247;</span>
+                    Tire uma foto do KitMojo
+                </div>
+
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvasElement"></canvas>
+
+                <div class="photo-preview" id="photoPreview">
+                    <img id="photoImg" src="" alt="Foto do KitMojo">
+                </div>
+
+                <div>
+                    <button type="button" class="btn-camera btn-abrir-camera" id="btnAbrirCamera" onclick="abrirCamera()">
+                        &#128247; Abrir Câmera
+                    </button>
+                    <button type="button" class="btn-camera btn-tirar-foto" id="btnTirarFoto" onclick="tirarFoto()">
+                        &#128248; Tirar Foto
+                    </button>
+                    <button type="button" class="btn-camera btn-nova-foto" id="btnNovaFoto" onclick="novaFoto()">
+                        &#128260; Nova Foto
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão Enviar -->
+        <button type="submit" class="btn-enviar" id="btnEnviar" disabled>Enviar Formulário</button>
+    </form>
+</div>
+
+<!-- Overlay de Sucesso -->
+<div class="sucesso-overlay" id="sucessoOverlay">
+    <div class="sucesso-card">
+        <div class="check">&#9989;</div>
+        <h2>Enviado com Sucesso!</h2>
+        <p>Seu registro do KitMojo foi realizado.</p>
+        <button onclick="resetarFormulario()">Novo Registro</button>
+    </div>
+</div>
+
+<script>
+    let stream = null;
+    let fotoCapturada = false;
+
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvasElement');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoImg = document.getElementById('photoImg');
+    const btnAbrirCamera = document.getElementById('btnAbrirCamera');
+    const btnTirarFoto = document.getElementById('btnTirarFoto');
+    const btnNovaFoto = document.getElementById('btnNovaFoto');
+    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const cameraArea = document.getElementById('cameraArea');
+    const btnEnviar = document.getElementById('btnEnviar');
+
+    function validarFormulario() {
+        const nomeRetirou = document.getElementById('nomeRetirou').value.trim();
+        const nomeRecebeu = document.getElementById('nomeRecebeu').value.trim();
+        const tipoKit = document.getElementById('tipoKit').value;
+
+        btnEnviar.disabled = !(nomeRetirou && nomeRecebeu && tipoKit && fotoCapturada);
+    }
+
+    document.getElementById('nomeRetirou').addEventListener('input', validarFormulario);
+    document.getElementById('nomeRecebeu').addEventListener('input', validarFormulario);
+    document.getElementById('tipoKit').addEventListener('change', validarFormulario);
+
+    async function abrirCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+            video.srcObject = stream;
+            video.style.display = 'block';
+            cameraPlaceholder.style.display = 'none';
+            btnAbrirCamera.style.display = 'none';
+            btnTirarFoto.style.display = 'inline-flex';
+            cameraArea.classList.add('active');
+        } catch (err) {
+            alert('Erro ao acessar a câmera. Verifique as permissões do navegador.\n\nDica: Em celulares, use o navegador Chrome ou Safari.');
+            console.error('Erro câmera:', err);
+        }
+    }
+
+    function tirarFoto() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        photoImg.src = dataUrl;
+        photoPreview.style.display = 'block';
+
+        // Parar câmera
+        pararCamera();
+
+        video.style.display = 'none';
+        btnTirarFoto.style.display = 'none';
+        btnNovaFoto.style.display = 'inline-flex';
+        cameraArea.classList.remove('active');
+        cameraArea.classList.add('has-photo');
+
+        fotoCapturada = true;
+        validarFormulario();
+    }
+
+    function novaFoto() {
+        photoPreview.style.display = 'none';
+        photoImg.src = '';
+        btnNovaFoto.style.display = 'none';
+        cameraArea.classList.remove('has-photo');
+        fotoCapturada = false;
+        validarFormulario();
+        abrirCamera();
+    }
+
+    function pararCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    // Envio do formulário
+    document.getElementById('formKitMojo').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (!fotoCapturada) {
+            alert('Por favor, tire uma foto do KitMojo.');
+            return;
+        }
+
+        const dados = {
+            nomeRetirou: document.getElementById('nomeRetirou').value.trim(),
+            nomeRecebeu: document.getElementById('nomeRecebeu').value.trim(),
+            tipoKit: document.getElementById('tipoKit').value,
+            foto: photoImg.src,
+            dataHora: new Date().toLocaleString('pt-BR')
+        };
+
+        console.log('Dados do formulário:', dados);
+
+        // Mostrar sucesso
+        document.getElementById('sucessoOverlay').classList.add('show');
+    });
+
+    function resetarFormulario() {
+        document.getElementById('formKitMojo').reset();
+        photoPreview.style.display = 'none';
+        photoImg.src = '';
+        btnNovaFoto.style.display = 'none';
+        btnAbrirCamera.style.display = 'inline-flex';
+        cameraPlaceholder.style.display = 'block';
+        cameraArea.classList.remove('has-photo', 'active');
+        fotoCapturada = false;
+        btnEnviar.disabled = true;
+        pararCamera();
+        document.getElementById('sucessoOverlay').classList.remove('show');
+    }
+
+    // Limpar câmera ao sair da página
+    window.addEventListener('beforeunload', pararCamera);
+</script>
+
+</body>
+</html>
