@@ -804,9 +804,17 @@
     });
     document.getElementById('devolucao-tipoKit').addEventListener('change', () => validarFormulario('devolucao'));
 
+    // URL do Google Apps Script (COLE SUA URL AQUI APÓS DEPLOY)
+    const GOOGLE_SCRIPT_URL = 'COLE_SUA_URL_AQUI';
+
     // Enviar
-    function enviarForm(e, tab) {
+    async function enviarForm(e, tab) {
         e.preventDefault();
+
+        const btnEnviar = document.getElementById('btnEnviar-' + tab);
+        const textoOriginal = btnEnviar.textContent;
+        btnEnviar.disabled = true;
+        btnEnviar.textContent = 'Enviando...';
 
         let dados = {};
 
@@ -814,13 +822,12 @@
             const checkedItems = [...document.querySelectorAll('#checklist-entrega input:checked')].map(c => c.value);
             dados = {
                 tipo: 'ENTREGA',
-                quemEntregou: document.getElementById('entrega-quemEntregou').value.trim(),
-                quemRetirou: document.getElementById('entrega-quemRetirou').value.trim(),
+                nome1: document.getElementById('entrega-quemEntregou').value.trim(),
+                nome2: document.getElementById('entrega-quemRetirou').value.trim(),
                 tipoKit: document.getElementById('entrega-tipoKit').value,
                 iphone: document.querySelector('input[name="entrega-iphone"]:checked').value,
-                itensConferidos: checkedItems,
-                itensFaltando: itensKit.filter(i => !checkedItems.includes(i)),
-                foto: document.getElementById('img-entrega').src,
+                itensConferidos: checkedItems.join(', '),
+                itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('entrega-observacao').value.trim(),
                 dataHora: new Date().toLocaleString('pt-BR')
             };
@@ -830,13 +837,12 @@
             const checkedItems = [...document.querySelectorAll('#checklist-devolucao input:checked')].map(c => c.value);
             dados = {
                 tipo: 'DEVOLUÇÃO',
-                quemEstava: document.getElementById('devolucao-quemEstava').value.trim(),
-                quemPegouDeVolta: document.getElementById('devolucao-quemPegou').value.trim(),
+                nome1: document.getElementById('devolucao-quemEstava').value.trim(),
+                nome2: document.getElementById('devolucao-quemPegou').value.trim(),
                 tipoKit: document.getElementById('devolucao-tipoKit').value,
                 iphone: document.querySelector('input[name="devolucao-iphone"]:checked').value,
-                itensDevolvidos: checkedItems,
-                itensFaltando: itensKit.filter(i => !checkedItems.includes(i)),
-                foto: document.getElementById('img-devolucao').src,
+                itensConferidos: checkedItems.join(', '),
+                itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('devolucao-observacao').value.trim(),
                 dataHora: new Date().toLocaleString('pt-BR')
             };
@@ -844,13 +850,22 @@
             document.getElementById('sucessoMsg').textContent = 'A devolução do KitMojo foi registrada com sucesso.';
         }
 
-        console.log('Dados do formulário:', dados);
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
 
-        if (dados.itensFaltando.length > 0) {
-            console.warn('ITENS FALTANDO:', dados.itensFaltando);
+            console.log('Dados enviados:', dados);
+            document.getElementById('sucessoOverlay').classList.add('show');
+        } catch (err) {
+            console.error('Erro ao enviar:', err);
+            alert('Erro ao enviar os dados. Verifique sua conexão e tente novamente.');
+            btnEnviar.disabled = false;
+            btnEnviar.textContent = textoOriginal;
         }
-
-        document.getElementById('sucessoOverlay').classList.add('show');
     }
 
     function resetarFormulario() {
