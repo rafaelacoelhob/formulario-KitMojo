@@ -829,6 +829,7 @@
                 itensConferidos: checkedItems.join(', '),
                 itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('entrega-observacao').value.trim(),
+                foto: document.getElementById('img-entrega').src,
                 dataHora: new Date().toLocaleString('pt-BR')
             };
             document.getElementById('sucessoTitulo').textContent = 'Entrega Registrada!';
@@ -844,6 +845,7 @@
                 itensConferidos: checkedItems.join(', '),
                 itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('devolucao-observacao').value.trim(),
+                foto: document.getElementById('img-devolucao').src,
                 dataHora: new Date().toLocaleString('pt-BR')
             };
             document.getElementById('sucessoTitulo').textContent = 'Devolução Registrada!';
@@ -854,7 +856,6 @@
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
 
