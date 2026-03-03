@@ -216,10 +216,12 @@
         .iphone-options {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .iphone-option {
-            flex: 1;
+            flex: 1 1 calc(50% - 6px);
+            min-width: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -545,17 +547,32 @@
 
             <div class="separator"></div>
 
-            <!-- iPhone -->
+            <!-- Celular iPhone -->
             <div class="iphone-section">
                 <label>Modelo do iPhone no Kit <span class="obrigatorio">*</span></label>
                 <div class="iphone-options">
-                    <label class="iphone-option" onclick="selecionarIphone(this, 'entrega')">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'entrega', 'iphone')">
                         <input type="radio" name="entrega-iphone" value="iPhone 15 Pro" required>
                         <span>iPhone 15 Pro</span>
                     </label>
-                    <label class="iphone-option" onclick="selecionarIphone(this, 'entrega')">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'entrega', 'iphone')">
                         <input type="radio" name="entrega-iphone" value="iPhone 16">
                         <span>iPhone 16</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Celular Android -->
+            <div class="iphone-section" style="margin-top: 16px;">
+                <label>Modelo do outro Celular no Kit <span class="obrigatorio">*</span></label>
+                <div class="iphone-options">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'entrega', 'android')">
+                        <input type="radio" name="entrega-android" value="Motorola" required>
+                        <span>Motorola</span>
+                    </label>
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'entrega', 'android')">
+                        <input type="radio" name="entrega-android" value="Samsung">
+                        <span>Samsung</span>
                     </label>
                 </div>
             </div>
@@ -630,17 +647,32 @@
 
             <div class="separator"></div>
 
-            <!-- iPhone -->
+            <!-- Celular iPhone -->
             <div class="iphone-section">
                 <label>Modelo do iPhone no Kit <span class="obrigatorio">*</span></label>
                 <div class="iphone-options">
-                    <label class="iphone-option" onclick="selecionarIphone(this, 'devolucao')">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'devolucao', 'iphone')">
                         <input type="radio" name="devolucao-iphone" value="iPhone 15 Pro" required>
                         <span>iPhone 15 Pro</span>
                     </label>
-                    <label class="iphone-option" onclick="selecionarIphone(this, 'devolucao')">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'devolucao', 'iphone')">
                         <input type="radio" name="devolucao-iphone" value="iPhone 16">
                         <span>iPhone 16</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Celular Android -->
+            <div class="iphone-section" style="margin-top: 16px;">
+                <label>Modelo do outro Celular no Kit <span class="obrigatorio">*</span></label>
+                <div class="iphone-options">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'devolucao', 'android')">
+                        <input type="radio" name="devolucao-android" value="Motorola" required>
+                        <span>Motorola</span>
+                    </label>
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'devolucao', 'android')">
+                        <input type="radio" name="devolucao-android" value="Samsung">
+                        <span>Samsung</span>
                     </label>
                 </div>
             </div>
@@ -719,7 +751,6 @@
 
     // Lista de itens do checklist
     const itensKit = [
-        'Samsung',
         'SmartRig Completo',
         'Conjunto Microfone DJI (Sem Fio)',
         'Microfone de Mão com Fio',
@@ -809,11 +840,20 @@
         validarFormulario(tab);
     }
 
-    // iPhone seleção visual
-    function selecionarIphone(el, tab) {
-        document.querySelectorAll('#tab-' + tab + ' .iphone-option').forEach(o => o.classList.remove('selected'));
+    // Celular seleção visual
+    function selecionarRadio(el, tab, grupo) {
+        // Limpa apenas as opções do mesmo grupo (mesmo name)
+        const name = el.querySelector('input[type="radio"]').name;
+        document.querySelectorAll('input[name="' + name + '"]').forEach(r => {
+            r.closest('.iphone-option').classList.remove('selected');
+        });
         el.classList.add('selected');
         validarFormulario(tab);
+    }
+
+    // Manter compatibilidade
+    function selecionarIphone(el, tab) {
+        selecionarRadio(el, tab, 'iphone');
     }
 
     // Trocar abas
@@ -901,15 +941,17 @@
             const nome2 = document.getElementById('entrega-quemRetirou').value.trim();
             const tipo = document.getElementById('entrega-tipoKit').value;
             const iphone = document.querySelector('input[name="entrega-iphone"]:checked');
+            const android = document.querySelector('input[name="entrega-android"]:checked');
             const checks = document.querySelectorAll('#checklist-entrega input:checked').length;
-            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && iphone && checks > 0 && fotos.entrega);
+            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && iphone && android && checks > 0 && fotos.entrega);
         } else {
             const nome1 = document.getElementById('devolucao-quemEstava').value.trim();
             const nome2 = document.getElementById('devolucao-quemPegou').value.trim();
             const tipo = document.getElementById('devolucao-tipoKit').value;
             const iphone = document.querySelector('input[name="devolucao-iphone"]:checked');
+            const android = document.querySelector('input[name="devolucao-android"]:checked');
             const checks = document.querySelectorAll('#checklist-devolucao input:checked').length;
-            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && tipo && iphone && checks > 0 && fotos.devolucao);
+            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && tipo && iphone && android && checks > 0 && fotos.devolucao);
         }
     }
 
@@ -956,6 +998,7 @@
                 nome2: document.getElementById('entrega-quemRetirou').value.trim(),
                 tipoKit: document.getElementById('entrega-tipoKit').value,
                 iphone: document.querySelector('input[name="entrega-iphone"]:checked').value,
+                android: document.querySelector('input[name="entrega-android"]:checked').value,
                 itensConferidos: checkedItems.join(', '),
                 itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('entrega-observacao').value.trim(),
@@ -972,6 +1015,7 @@
                 nome2: document.getElementById('devolucao-quemPegou').value.trim(),
                 tipoKit: document.getElementById('devolucao-tipoKit').value,
                 iphone: document.querySelector('input[name="devolucao-iphone"]:checked').value,
+                android: document.querySelector('input[name="devolucao-android"]:checked').value,
                 itensConferidos: checkedItems.join(', '),
                 itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('devolucao-observacao').value.trim(),
