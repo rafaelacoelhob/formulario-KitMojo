@@ -382,6 +382,69 @@
             cursor: pointer;
         }
 
+        /* Erro */
+        .erro-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .erro-overlay.show { display: flex; }
+
+        .erro-card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 450px;
+            margin: 20px;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .erro-card .icon-erro { font-size: 64px; margin-bottom: 16px; }
+        .erro-card h2 { color: #e53935; margin-bottom: 8px; }
+        .erro-card p { color: #666; margin-bottom: 12px; }
+        .erro-card .erro-detalhe {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #555;
+            text-align: left;
+            word-break: break-all;
+            margin-bottom: 16px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .erro-card button {
+            padding: 12px 32px;
+            background: #e53935;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        /* Debug banner */
+        .debug-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 16px 24px;
+            font-size: 13px;
+            color: #856404;
+            display: none;
+        }
+        .debug-banner.show { display: block; }
+        .debug-banner strong { display: block; margin-bottom: 4px; }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -417,6 +480,16 @@
             border-color: #999;
         }
 
+        /* Status de envio */
+        .envio-status {
+            text-align: center;
+            padding: 8px;
+            font-size: 13px;
+            color: #666;
+            display: none;
+        }
+        .envio-status.show { display: block; }
+
         @media (max-width: 520px) {
             body { padding: 10px; }
             .header { padding: 20px 16px; }
@@ -424,6 +497,7 @@
             .tab-content { padding: 16px; }
             .checklist-grid { grid-template-columns: 1fr; }
             .iphone-options { flex-direction: column; }
+            .debug-banner { margin: 12px 12px; }
         }
     </style>
 </head>
@@ -433,6 +507,12 @@
     <div class="header">
         <h1>KitMojo</h1>
         <p>Controle de Entrega e Devolução</p>
+    </div>
+
+    <!-- Debug Banner -->
+    <div class="debug-banner" id="debugBanner">
+        <strong>&#128269; Debug:</strong>
+        <span id="debugMsg"></span>
     </div>
 
     <!-- Abas -->
@@ -521,6 +601,7 @@
                 <textarea id="entrega-observacao" placeholder="Alguma observação? (opcional)"></textarea>
             </div>
 
+            <div class="envio-status" id="status-entrega"></div>
             <button type="submit" class="btn-enviar" id="btnEnviar-entrega" disabled>Enviar Entrega</button>
         </form>
     </div>
@@ -605,6 +686,7 @@
                 <textarea id="devolucao-observacao" placeholder="Alguma observação? (opcional)"></textarea>
             </div>
 
+            <div class="envio-status" id="status-devolucao"></div>
             <button type="submit" class="btn-enviar" id="btnEnviar-devolucao" disabled>Enviar Devolução</button>
         </form>
     </div>
@@ -620,7 +702,21 @@
     </div>
 </div>
 
+<!-- Overlay de Erro -->
+<div class="erro-overlay" id="erroOverlay">
+    <div class="erro-card">
+        <div class="icon-erro">&#10060;</div>
+        <h2>Erro ao Enviar</h2>
+        <p>Não foi possível registrar os dados.</p>
+        <div class="erro-detalhe" id="erroDetalhe"></div>
+        <button onclick="fecharErro()">Fechar</button>
+    </div>
+</div>
+
 <script>
+    // ===== URL DO GOOGLE APPS SCRIPT (NOVA IMPLANTAÇÃO) =====
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTlyEjrpEc_C-i_mWvCM4zbzrMpwvvcRaVonDy8VKdi3c-dh6VolNzROortVou1CGlLA/exec';
+
     // Lista de itens do checklist
     const itensKit = [
         'Samsung',
@@ -644,6 +740,30 @@
         'Tripé Rotativo',
         'Cabo Áudio e Vídeo'
     ];
+
+    // Debug helper
+    function debugLog(msg) {
+        console.log('[KitMojo]', msg);
+        const banner = document.getElementById('debugBanner');
+        const msgEl = document.getElementById('debugMsg');
+        msgEl.textContent = msg;
+        banner.classList.add('show');
+    }
+
+    function hideDebug() {
+        document.getElementById('debugBanner').classList.remove('show');
+    }
+
+    function showStatus(tab, msg) {
+        const el = document.getElementById('status-' + tab);
+        el.textContent = msg;
+        el.classList.add('show');
+    }
+
+    function hideStatus(tab) {
+        const el = document.getElementById('status-' + tab);
+        el.classList.remove('show');
+    }
 
     // Gerar checklists nas duas abas
     function gerarChecklist(tabId) {
@@ -707,6 +827,7 @@
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
         }
         document.getElementById('tab-' + tab).classList.add('active');
+        hideDebug();
     }
 
     // Câmera por aba
@@ -723,7 +844,6 @@
             video.srcObject = s;
             video.style.display = 'block';
             document.getElementById('placeholder-' + tab).style.display = 'none';
-            // Esconder botão abrir, mostrar tirar
             const area = document.getElementById('cameraArea-' + tab);
             area.querySelector('.btn-abrir').style.display = 'none';
             document.getElementById('btnTirar-' + tab).style.display = 'inline-flex';
@@ -804,10 +924,18 @@
     });
     document.getElementById('devolucao-tipoKit').addEventListener('change', () => validarFormulario('devolucao'));
 
-    // URL do Google Apps Script (COLE SUA URL AQUI APÓS DEPLOY)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvUZB3umCEWpbMS2Vr8gubEnxYlS-IVHb1GCozt2iF_9Ajb3rN_vrjFhMmluENDn0HKw/exec';
+    // Fechar erro
+    function fecharErro() {
+        document.getElementById('erroOverlay').classList.remove('show');
+    }
 
-    // Enviar
+    // Mostrar erro com detalhes
+    function mostrarErro(detalhe) {
+        document.getElementById('erroDetalhe').textContent = detalhe;
+        document.getElementById('erroOverlay').classList.add('show');
+    }
+
+    // ===== ENVIAR =====
     async function enviarForm(e, tab) {
         e.preventDefault();
 
@@ -815,6 +943,8 @@
         const textoOriginal = btnEnviar.textContent;
         btnEnviar.disabled = true;
         btnEnviar.textContent = 'Enviando...';
+        showStatus(tab, 'Preparando dados...');
+        hideDebug();
 
         let dados = {};
 
@@ -852,18 +982,79 @@
             document.getElementById('sucessoMsg').textContent = 'A devolução do KitMojo foi registrada com sucesso.';
         }
 
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(dados)
-            });
+        // Log do tamanho do payload (foto base64 pode ser grande)
+        const payload = JSON.stringify(dados);
+        const tamanhoMB = (payload.length / 1024 / 1024).toFixed(2);
+        console.log('[KitMojo] Tamanho do payload:', tamanhoMB, 'MB');
+        showStatus(tab, 'Enviando dados (' + tamanhoMB + ' MB)...');
 
-            console.log('Dados enviados:', dados);
+        // ===== ESTRATÉGIA DE ENVIO =====
+        // Tentativa 1: fetch normal (permite ver a resposta)
+        // Tentativa 2: fetch no-cors (fallback se CORS bloquear)
+
+        try {
+            let resposta = null;
+            let usouNoCors = false;
+
+            // Tentativa 1: fetch normal
+            try {
+                showStatus(tab, 'Enviando... (tentativa com resposta)');
+                const resp = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: payload,
+                    redirect: 'follow'
+                });
+
+                if (resp.ok) {
+                    const texto = await resp.text();
+                    console.log('[KitMojo] Resposta do servidor:', texto);
+                    try {
+                        resposta = JSON.parse(texto);
+                    } catch (parseErr) {
+                        // Resposta não é JSON, mas o request foi OK
+                        resposta = { status: 'ok', raw: texto };
+                    }
+                } else {
+                    console.warn('[KitMojo] Status HTTP:', resp.status);
+                    throw new Error('HTTP ' + resp.status);
+                }
+            } catch (corsErr) {
+                // Se deu erro de CORS, tenta no-cors
+                console.warn('[KitMojo] Fetch normal falhou (provavelmente CORS), tentando no-cors...', corsErr.message);
+                showStatus(tab, 'Enviando... (modo alternativo)');
+                usouNoCors = true;
+
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: payload
+                });
+
+                resposta = { status: 'ok-no-cors', nota: 'Enviado via no-cors, não é possível confirmar o resultado.' };
+            }
+
+            console.log('[KitMojo] Resultado final:', resposta);
+
+            // Verificar se o servidor retornou erro
+            if (resposta && resposta.status === 'error') {
+                throw new Error(resposta.message || 'Erro desconhecido no servidor');
+            }
+
+            // Sucesso
+            hideStatus(tab);
+
+            if (usouNoCors) {
+                debugLog('Enviado via modo no-cors. Se os dados não aparecerem na planilha, verifique o Apps Script. Abra o console (F12) para mais detalhes.');
+            }
+
             document.getElementById('sucessoOverlay').classList.add('show');
+
         } catch (err) {
-            console.error('Erro ao enviar:', err);
-            alert('Erro ao enviar os dados. Verifique sua conexão e tente novamente.');
+            console.error('[KitMojo] Erro ao enviar:', err);
+            hideStatus(tab);
+            mostrarErro(err.message || err.toString());
             btnEnviar.disabled = false;
             btnEnviar.textContent = textoOriginal;
         }
@@ -894,8 +1085,12 @@
 
             // Reset botão
             document.getElementById('btnEnviar-' + tab).disabled = true;
+
+            // Reset status
+            hideStatus(tab);
         });
 
+        hideDebug();
         document.getElementById('sucessoOverlay').classList.remove('show');
     }
 
