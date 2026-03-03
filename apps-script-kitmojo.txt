@@ -1,8 +1,8 @@
 // ===== CODIGO ATUALIZADO DO GOOGLE APPS SCRIPT =====
-// Agora grava "Modelo iPhone" e "Modelo Android" em colunas separadas
+// Inclui "Port SRT" entre "Modelo Android" e "Itens Conferidos"
 //
 // IMPORTANTE: Apos colar, faca NOVA IMPLANTACAO
-// Na planilha, adicione a coluna "Modelo Android" entre "Modelo iPhone" e "Itens Conferidos"
+// Na planilha, adicione a coluna "Port SRT" entre "Modelo Android" e "Itens Conferidos"
 
 function doPost(e) {
   try {
@@ -14,10 +14,10 @@ function doPost(e) {
       sheet = ss.insertSheet('KitMojo');
       sheet.appendRow([
         'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
-        'Modelo iPhone', 'Modelo Android',
+        'Modelo iPhone', 'Modelo Android', 'Port SRT',
         'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)'
       ]);
-      var headerRange = sheet.getRange(1, 1, 1, 11);
+      var headerRange = sheet.getRange(1, 1, 1, 12);
       headerRange.setFontWeight('bold');
       headerRange.setBackground('#1a1a2e');
       headerRange.setFontColor('#ffffff');
@@ -47,6 +47,7 @@ function doPost(e) {
       dados.tipoKit || '',
       dados.iphone || '',
       dados.android || '',
+      dados.portSrt || '',
       dados.itensConferidos || '',
       dados.itensFaltando || '',
       dados.observacao || '',
@@ -70,7 +71,8 @@ function testeManual() {
     postData: {
       contents: JSON.stringify({
         tipo: 'ENTREGA', nome1: 'Teste', nome2: 'Teste2',
-        tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Samsung',
+        tipoKit: 'LiveMode', portSrt: '9000',
+        iphone: 'iPhone 16', android: 'Samsung',
         itensConferidos: 'SmartRig Completo', itensFaltando: 'Espuma',
         observacao: 'Teste', foto: '',
         dataHora: new Date().toLocaleString('pt-BR')

@@ -545,6 +545,11 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="entrega-portSrt">Port SRT <span class="obrigatorio">*</span></label>
+                <input type="text" id="entrega-portSrt" placeholder="Ex: 9000" required>
+            </div>
+
             <div class="separator"></div>
 
             <!-- Celular iPhone -->
@@ -747,7 +752,7 @@
 
 <script>
     // ===== URL DO GOOGLE APPS SCRIPT (NOVA IMPLANTAÇÃO) =====
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTlyEjrpEc_C-i_mWvCM4zbzrMpwvvcRaVonDy8VKdi3c-dh6VolNzROortVou1CGlLA/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNSDPOQc0Ev7DH3dP4OV_h7u05OEsIXrDziORDf19KV6lFRHwt6lfCkUPRK3r1X2kR9w/exec';
 
     // Lista de itens do checklist
     const itensKit = [
@@ -940,10 +945,11 @@
             const nome1 = document.getElementById('entrega-quemEntregou').value.trim();
             const nome2 = document.getElementById('entrega-quemRetirou').value.trim();
             const tipo = document.getElementById('entrega-tipoKit').value;
+            const portSrt = document.getElementById('entrega-portSrt').value.trim();
             const iphone = document.querySelector('input[name="entrega-iphone"]:checked');
             const android = document.querySelector('input[name="entrega-android"]:checked');
             const checks = document.querySelectorAll('#checklist-entrega input:checked').length;
-            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && iphone && android && checks > 0 && fotos.entrega);
+            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && portSrt && iphone && android && checks > 0 && fotos.entrega);
         } else {
             const nome1 = document.getElementById('devolucao-quemEstava').value.trim();
             const nome2 = document.getElementById('devolucao-quemPegou').value.trim();
@@ -956,7 +962,7 @@
     }
 
     // Listeners de validação
-    ['entrega-quemEntregou', 'entrega-quemRetirou'].forEach(id => {
+    ['entrega-quemEntregou', 'entrega-quemRetirou', 'entrega-portSrt'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => validarFormulario('entrega'));
     });
     document.getElementById('entrega-tipoKit').addEventListener('change', () => validarFormulario('entrega'));
@@ -997,6 +1003,7 @@
                 nome1: document.getElementById('entrega-quemEntregou').value.trim(),
                 nome2: document.getElementById('entrega-quemRetirou').value.trim(),
                 tipoKit: document.getElementById('entrega-tipoKit').value,
+                portSrt: document.getElementById('entrega-portSrt').value.trim(),
                 iphone: document.querySelector('input[name="entrega-iphone"]:checked').value,
                 android: document.querySelector('input[name="entrega-android"]:checked').value,
                 itensConferidos: checkedItems.join(', '),

@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard KitMojo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0f1117;
+            --bg-card: #1a1d27;
+            --bg-hover: #222632;
+            --border: #2a2e3a;
+            --text: #e4e6eb;
+            --text2: #8b8fa3;
+            --blue: #3b82f6;
+            --blue-bg: rgba(59,130,246,0.12);
+            --green: #22c55e;
+            --green-bg: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-bg: rgba(239,68,68,0.12);
+            --yellow: #f59e0b;
+            --yellow-bg: rgba(245,158,11,0.12);
+            --purple: #a855f7;
+            --purple-bg: rgba(168,85,247,0.12);
+            --cyan: #06b6d4;
+            --cyan-bg: rgba(6,182,212,0.12);
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 250px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-brand h1 {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-brand span { font-size: 11px; color: var(--text2); }
+
+        .sidebar-nav { flex: 1; padding: 12px; }
+
+        .nav-btn {
+            display: flex; align-items: center; gap: 12px;
+            width: 100%; padding: 11px 16px;
+            background: none; border: none; border-radius: 10px;
+            color: var(--text2); font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; margin-bottom: 2px;
+            text-align: left;
+        }
+
+        .nav-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .nav-btn.active { background: var(--blue-bg); color: var(--blue); }
+        .nav-btn .ico { font-size: 18px; width: 22px; text-align: center; }
+
+        .sidebar-foot {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-refresh {
+            width: 100%; padding: 10px;
+            background: var(--blue); color: #fff;
+            border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: background 0.2s;
+        }
+
+        .btn-refresh:hover { background: #2563eb; }
+        .btn-refresh:disabled { opacity: 0.5; cursor: wait; }
+
+        .last-sync { font-size: 11px; color: var(--text2); text-align: center; margin-top: 8px; }
+
+        /* ===== MAIN ===== */
+        .main { margin-left: 250px; padding: 28px 32px; }
+
+        .page-head {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 24px;
+        }
+
+        .page-head h2 { font-size: 22px; font-weight: 700; }
+
+        .head-actions { display: flex; gap: 10px; align-items: center; }
+
+        .sel, .inp {
+            padding: 8px 14px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); font-size: 13px;
+            outline: none;
+        }
+
+        .sel:focus, .inp:focus { border-color: var(--blue); }
+        .inp::placeholder { color: var(--text2); }
+
+        .btn-sm {
+            padding: 8px 14px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); font-size: 13px;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+
+        .btn-sm:hover { border-color: var(--blue); }
+
+        /* ===== SECTIONS ===== */
+        .sec { display: none; }
+        .sec.on { display: block; }
+
+        /* ===== KPIs ===== */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px; margin-bottom: 24px;
+        }
+
+        .kpi {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .kpi:hover { transform: translateY(-2px); border-color: var(--blue); }
+
+        .kpi-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .kpi-label { font-size: 13px; color: var(--text2); font-weight: 500; }
+
+        .kpi-ico {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+
+        .kpi-val { font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .kpi-sub { font-size: 12px; color: var(--text2); }
+
+        /* ===== CARDS / CHARTS ===== */
+        .grid2 {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 14px; margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px;
+        }
+
+        .card.full { grid-column: 1 / -1; }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+        .chart-box { position: relative; height: 270px; }
+
+        /* ===== TABLE ===== */
+        .tbl-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden; margin-bottom: 24px;
+        }
+
+        .tbl-head {
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .tbl-head h3 { font-size: 15px; font-weight: 600; }
+        .tbl-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            padding: 10px 14px; text-align: left;
+            font-size: 11px; font-weight: 700; color: var(--text2);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 14px; font-size: 13px;
+            border-bottom: 1px solid var(--border); white-space: nowrap;
+        }
+
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        tr:last-child td { border-bottom: none; }
+
+        .badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 6px; font-size: 11px; font-weight: 700;
+        }
+
+        .b-ent { background: var(--green-bg); color: var(--green); }
+        .b-dev { background: var(--cyan-bg); color: var(--cyan); }
+        .b-uso { background: var(--yellow-bg); color: var(--yellow); }
+        .b-ok  { background: var(--green-bg); color: var(--green); }
+        .b-nok { background: var(--red-bg); color: var(--red); }
+        .b-disp { background: var(--green-bg); color: var(--green); }
+
+        /* ===== KIT CARDS ===== */
+        .kit-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 14px; margin-bottom: 24px;
+        }
+
+        .kit-c {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; transition: border-color 0.2s;
+        }
+
+        .kit-c:hover { border-color: var(--blue); }
+
+        .kit-c-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+        .kit-c-title { font-size: 15px; font-weight: 700; }
+        .kit-c-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+        .kit-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+        .kit-row-l { color: var(--text2); }
+
+        .prog { margin-top: 10px; }
+        .prog-lbl { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+
+        .prog-bar {
+            height: 7px; background: rgba(255,255,255,0.08);
+            border-radius: 4px; overflow: hidden;
+        }
+
+        .prog-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+
+        /* ===== TIMELINE ===== */
+        .tl { position: relative; padding-left: 30px; }
+        .tl::before {
+            content: ''; position: absolute;
+            left: 10px; top: 0; bottom: 0;
+            width: 2px; background: var(--border);
+        }
+
+        .tl-item { position: relative; padding-bottom: 22px; }
+        .tl-item:last-child { padding-bottom: 0; }
+
+        .tl-dot {
+            position: absolute; left: -25px; top: 4px;
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 3px solid; background: var(--bg-card);
+        }
+
+        .tl-dot.ent { border-color: var(--green); }
+        .tl-dot.dev { border-color: var(--cyan); }
+
+        .tl-date { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+
+        .tl-box {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 16px;
+        }
+
+        .tl-box h4 { font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .tl-box p { font-size: 13px; color: var(--text2); }
+
+        /* ===== PAGINATION ===== */
+        .pag { display: flex; justify-content: center; gap: 6px; padding: 14px; }
+
+        .pg {
+            padding: 5px 11px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text); font-size: 13px; cursor: pointer;
+        }
+
+        .pg:hover { border-color: var(--blue); }
+        .pg.on { background: var(--blue); border-color: var(--blue); }
+        .pg:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ===== LOADING ===== */
+        .loading {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,17,23,0.85); z-index: 999;
+            justify-content: center; align-items: center;
+        }
+
+        .loading.on { display: flex; }
+
+        .spin {
+            width: 44px; height: 44px;
+            border: 4px solid var(--border); border-top-color: var(--blue);
+            border-radius: 50%; animation: sp 0.7s linear infinite;
+        }
+
+        @keyframes sp { to { transform: rotate(360deg); } }
+
+        .empty {
+            text-align: center; padding: 50px 20px; color: var(--text2);
+        }
+
+        .empty .ico { font-size: 50px; display: block; margin-bottom: 14px; }
+        .empty h3 { font-size: 17px; color: var(--text); margin-bottom: 6px; }
+        .empty p { font-size: 14px; max-width: 380px; margin: 0 auto; }
+
+        /* ===== OVERVIEW - PAINEL DOS 6 KITS ===== */
+        .ov-summary {
+            display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;
+        }
+
+        .ov-stat {
+            flex: 1; min-width: 180px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 18px 22px;
+            display: flex; align-items: center; gap: 16px;
+        }
+
+        .ov-stat-ring {
+            width: 56px; height: 56px; position: relative;
+        }
+
+        .ov-stat-ring svg { transform: rotate(-90deg); }
+
+        .ov-stat-ring .ring-bg {
+            fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 5;
+        }
+
+        .ov-stat-ring .ring-fill {
+            fill: none; stroke-width: 5; stroke-linecap: round;
+            transition: stroke-dashoffset 0.6s ease;
+        }
+
+        .ov-stat-ring .ring-text {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 800;
+        }
+
+        .ov-stat-info { flex: 1; }
+        .ov-stat-label { font-size: 13px; color: var(--text2); margin-bottom: 2px; }
+        .ov-stat-val { font-size: 20px; font-weight: 800; }
+
+        .ov-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+
+        .ov-kit {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 0; overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .ov-kit:hover { border-color: var(--blue); transform: translateY(-2px); }
+
+        .ov-kit-top {
+            padding: 18px 20px 14px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+
+        .ov-kit-num {
+            font-size: 11px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 1.5px; color: var(--text2); margin-bottom: 4px;
+        }
+
+        .ov-kit-title { font-size: 16px; font-weight: 700; }
+
+        .ov-kit-status {
+            padding: 5px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .ov-kit-status.uso {
+            background: var(--yellow-bg); color: var(--yellow);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .ov-kit-status.disp {
+            background: var(--green-bg); color: var(--green);
+            border: 1px solid rgba(34,197,94,0.25);
+        }
+
+        .ov-kit-status .pulse {
+            width: 8px; height: 8px; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .ov-kit-status.uso .pulse { background: var(--yellow); }
+        .ov-kit-status.disp .pulse { background: var(--green); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .ov-kit-body { padding: 0 20px 16px; }
+
+        .ov-kit-phones {
+            display: flex; gap: 10px; margin-bottom: 14px;
+        }
+
+        .ov-phone {
+            flex: 1; display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px; border-radius: 8px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .ov-phone .ph-ico { font-size: 16px; }
+
+        .ov-kit-info { display: flex; flex-direction: column; gap: 6px; }
+
+        .ov-kit-row {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px;
+        }
+
+        .ov-kit-row .lbl { color: var(--text2); }
+        .ov-kit-row .val { font-weight: 600; }
+
+        .ov-kit-bar {
+            margin-top: 12px; padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .ov-bar-lbl {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; margin-bottom: 6px;
+        }
+
+        .ov-bar-track {
+            height: 8px; background: rgba(255,255,255,0.06);
+            border-radius: 4px; overflow: hidden;
+        }
+
+        .ov-bar-fill {
+            height: 100%; border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .ov-kit-alert {
+            margin-top: 10px; padding: 8px 12px;
+            background: var(--red-bg); border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 8px; font-size: 12px; color: var(--red);
+        }
+
+        .ov-kit-tempo {
+            margin-top: 8px;
+            font-size: 12px; color: var(--text2);
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .ov-kit-tempo .tempo-val { color: var(--yellow); font-weight: 700; }
+
+        .ov-alerts {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; margin-bottom: 24px;
+        }
+
+        .ov-alerts-title {
+            font-size: 15px; font-weight: 600; margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .ov-alert-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            margin-bottom: 8px; font-size: 13px;
+        }
+
+        .ov-alert-item:last-child { margin-bottom: 0; }
+        .ov-alert-item .a-ico { font-size: 18px; }
+        .ov-alert-item .a-text { flex: 1; }
+        .ov-alert-item .a-time { font-size: 12px; color: var(--text2); white-space: nowrap; }
+
+        /* ===== CONFERENCIA ===== */
+        .conf-ciclo {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; margin-bottom: 16px; overflow: hidden;
+        }
+
+        .conf-ciclo-head {
+            padding: 16px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer; transition: background 0.2s;
+        }
+
+        .conf-ciclo-head:hover { background: var(--bg-hover); }
+
+        .conf-ciclo-head-left {
+            display: flex; align-items: center; gap: 14px;
+        }
+
+        .conf-ciclo-kit {
+            font-size: 15px; font-weight: 700;
+        }
+
+        .conf-ciclo-kit-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+        .conf-ciclo-head-right {
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .conf-resultado {
+            padding: 5px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .conf-resultado.ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+        .conf-resultado.perdeu { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+        .conf-resultado.pendente { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+
+        .conf-ciclo-body {
+            padding: 0;
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .conf-ciclo.open .conf-ciclo-body {
+            max-height: 2000px;
+            padding: 20px;
+        }
+
+        .conf-arrow {
+            font-size: 14px; color: var(--text2);
+            transition: transform 0.3s;
+        }
+
+        .conf-ciclo.open .conf-arrow { transform: rotate(180deg); }
+
+        .conf-compare {
+            display: grid; grid-template-columns: 1fr 40px 1fr;
+            gap: 0; align-items: start;
+        }
+
+        .conf-side {
+            padding: 16px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+        }
+
+        .conf-side-title {
+            font-size: 13px; font-weight: 700;
+            margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border);
+        }
+
+        .conf-side-row {
+            display: flex; justify-content: space-between;
+            padding: 4px 0; font-size: 13px;
+        }
+
+        .conf-side-row .lbl { color: var(--text2); }
+
+        .conf-middle {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; font-size: 24px; color: var(--text2);
+            padding-top: 50px;
+        }
+
+        .conf-itens-grid {
+            margin-top: 16px;
+        }
+
+        .conf-itens-title {
+            font-size: 13px; font-weight: 700;
+            margin-bottom: 10px; padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .conf-item-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 10px; border-radius: 6px;
+            font-size: 13px; margin-bottom: 4px;
+        }
+
+        .conf-item-row .item-ico { font-size: 14px; width: 20px; text-align: center; }
+        .conf-item-row .item-name { flex: 1; }
+
+        .conf-item-row.ok { background: rgba(34,197,94,0.06); }
+        .conf-item-row.ok .item-ico { color: var(--green); }
+
+        .conf-item-row.lost { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+        .conf-item-row.lost .item-ico { color: var(--red); }
+        .conf-item-row.lost .item-name { color: var(--red); font-weight: 600; }
+
+        .conf-item-row.missing-ent { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+        .conf-item-row.missing-ent .item-ico { color: var(--yellow); }
+        .conf-item-row.missing-ent .item-name { color: var(--yellow); }
+
+        .conf-stats-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+
+        .conf-stat-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; text-align: center;
+        }
+
+        .conf-stat-val { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .conf-stat-lbl { font-size: 12px; color: var(--text2); }
+
+        .conf-legend {
+            display: flex; gap: 16px; flex-wrap: wrap;
+            margin-bottom: 16px; padding: 12px 16px;
+            background: rgba(255,255,255,0.02); border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .conf-legend-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: var(--text2);
+        }
+
+        .conf-legend-dot {
+            width: 10px; height: 10px; border-radius: 3px;
+        }
+
+        /* ===== CONFERENCIA MELHORADA ===== */
+        .conf-charts-row {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 14px; margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .conf-charts-row { grid-template-columns: 1fr; }
+        }
+
+        .conf-chart-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px;
+        }
+
+        .conf-chart-title {
+            font-size: 14px; font-weight: 700; margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .conf-chart-box { position: relative; height: 220px; }
+
+        /* Ranking de responsabilidade */
+        .conf-rank-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .conf-rank-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .conf-rank-item:hover { border-color: var(--blue); }
+
+        .conf-rank-pos {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800;
+        }
+
+        .conf-rank-pos.p1 { background: rgba(239,68,68,0.15); color: var(--red); }
+        .conf-rank-pos.p2 { background: rgba(245,158,11,0.15); color: var(--yellow); }
+        .conf-rank-pos.p3 { background: rgba(59,130,246,0.15); color: var(--blue); }
+        .conf-rank-pos.p4 { background: rgba(255,255,255,0.06); color: var(--text2); }
+
+        .conf-rank-info { flex: 1; }
+        .conf-rank-name { font-size: 14px; font-weight: 600; }
+        .conf-rank-detail { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+        .conf-rank-bar {
+            width: 80px; height: 6px; background: rgba(255,255,255,0.06);
+            border-radius: 3px; overflow: hidden;
+        }
+
+        .conf-rank-fill {
+            height: 100%; border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        /* Health ring no cabeçalho do ciclo */
+        .conf-health-ring {
+            width: 42px; height: 42px; position: relative; flex-shrink: 0;
+        }
+
+        .conf-health-ring svg { transform: rotate(-90deg); }
+
+        .conf-health-ring .hr-bg {
+            fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4;
+        }
+
+        .conf-health-ring .hr-fill {
+            fill: none; stroke-width: 4; stroke-linecap: round;
+            transition: stroke-dashoffset 0.6s ease;
+        }
+
+        .conf-health-ring .hr-text {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800;
+        }
+
+        /* Preview de itens perdidos no cabeçalho */
+        .conf-lost-preview {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+        }
+
+        .conf-lost-tag {
+            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+            background: var(--red-bg); color: var(--red);
+            border: 1px solid rgba(239,68,68,0.2);
+            max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .conf-lost-more {
+            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+            background: rgba(255,255,255,0.04); color: var(--text2);
+        }
+
+        /* Tempo de uso */
+        .conf-tempo {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+            background: rgba(168,85,247,0.1); color: var(--purple);
+            border: 1px solid rgba(168,85,247,0.2);
+        }
+
+        /* Foto comparison */
+        .conf-fotos {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin-top: 14px;
+            padding-top: 14px; border-top: 1px solid var(--border);
+        }
+
+        .conf-foto-box {
+            border-radius: 10px; overflow: hidden;
+            border: 1px solid var(--border); background: rgba(0,0,0,0.2);
+        }
+
+        .conf-foto-label {
+            padding: 6px 12px; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .conf-foto-box img {
+            width: 100%; display: block; max-height: 200px; object-fit: cover;
+            cursor: pointer; transition: opacity 0.2s;
+        }
+
+        .conf-foto-box img:hover { opacity: 0.85; }
+
+        .conf-foto-empty {
+            padding: 24px; text-align: center; color: var(--text2); font-size: 12px;
+        }
+
+        /* Barra de saúde geral no topo */
+        .conf-health-bar-wrap {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; margin-bottom: 20px;
+        }
+
+        .conf-health-title {
+            font-size: 15px; font-weight: 700; margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .conf-health-track {
+            height: 20px; background: rgba(255,255,255,0.06);
+            border-radius: 10px; overflow: hidden;
+            display: flex;
+        }
+
+        .conf-health-seg {
+            height: 100%; transition: width 0.5s ease;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700; color: #fff;
+            min-width: 0;
+        }
+
+        .conf-health-labels {
+            display: flex; justify-content: space-between; margin-top: 8px;
+            font-size: 12px;
+        }
+
+        /* Alerta de kits há muito tempo fora */
+        .conf-alert-banner {
+            background: var(--red-bg); border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .conf-alert-ico { font-size: 24px; }
+        .conf-alert-text { flex: 1; font-size: 13px; }
+        .conf-alert-text strong { color: var(--red); }
+
+        /* ===== MOBILE ===== */
+        .mob-head { display: none; }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 16px; }
+            .grid2 { grid-template-columns: 1fr; }
+            .kit-grid { grid-template-columns: 1fr; }
+            .mob-head {
+                display: flex; padding: 14px 16px;
+                background: var(--bg-card); border-bottom: 1px solid var(--border);
+                align-items: center; justify-content: space-between;
+                flex-wrap: wrap; gap: 8px;
+            }
+            .mob-head h1 {
+                font-size: 17px;
+                background: linear-gradient(135deg, var(--blue), var(--purple));
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            }
+            .mob-nav { display: flex; gap: 4px; flex-wrap: wrap; }
+            .mob-nav button {
+                padding: 5px 10px; background: none; border: 1px solid var(--border);
+                border-radius: 6px; color: var(--text2); font-size: 11px; cursor: pointer;
+            }
+            .mob-nav button.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="loading" id="load">
+    <div style="text-align:center">
+        <div class="spin"></div>
+        <p style="margin-top:14px;color:var(--text2);font-size:13px">Carregando dados...</p>
+    </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <h1>KitMojo</h1>
+        <span>Dashboard de Controle</span>
+    </div>
+    <div class="sidebar-nav">
+        <button class="nav-btn active" data-sec="geral"><span class="ico">&#128202;</span> Visao Geral</button>
+        <button class="nav-btn" data-sec="kits"><span class="ico">&#128230;</span> Status dos Kits</button>
+        <button class="nav-btn" data-sec="conferencia"><span class="ico">&#128269;</span> Conferencia</button>
+        <button class="nav-btn" data-sec="faltando"><span class="ico">&#9888;&#65039;</span> Itens Faltando</button>
+        <button class="nav-btn" data-sec="historico"><span class="ico">&#128221;</span> Historico</button>
+        <button class="nav-btn" data-sec="timeline"><span class="ico">&#128337;</span> Linha do Tempo</button>
+    </div>
+    <div class="sidebar-foot">
+        <button class="btn-refresh" id="btnRef" onclick="load()">&#8635; Atualizar Dados</button>
+        <div class="last-sync" id="lastSync">Nunca atualizado</div>
+    </div>
+</nav>
+
+<!-- MOBILE HEADER -->
+<div class="mob-head">
+    <h1>KitMojo</h1>
+    <div class="mob-nav" id="mobNav">
+        <button class="on" data-sec="geral">Geral</button>
+        <button data-sec="kits">Kits</button>
+        <button data-sec="conferencia">Conferir</button>
+        <button data-sec="faltando">Faltando</button>
+        <button data-sec="historico">Historico</button>
+        <button data-sec="timeline">Timeline</button>
+    </div>
+</div>
+
+<div class="main">
+
+
+<!-- ========== VISAO GERAL ========== -->
+<section class="sec on" id="sec-geral">
+    <div class="page-head">
+        <h2>Painel de Controle</h2>
+        <div class="head-actions">
+            <select class="sel" id="fPeriodo" onchange="filtrar()">
+                <option value="all">Todo periodo</option>
+                <option value="0">Hoje</option>
+                <option value="7">Ultimos 7 dias</option>
+                <option value="30">Ultimos 30 dias</option>
+                <option value="90">Ultimos 90 dias</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Resumo visual: rings -->
+    <div class="ov-summary" id="ovSummary"></div>
+
+    <!-- Grid dos 6 kits -->
+    <div class="ov-grid" id="ovGrid"></div>
+
+    <!-- Alertas -->
+    <div class="ov-alerts" id="ovAlerts" style="display:none">
+        <div class="ov-alerts-title">&#9888;&#65039; Alertas</div>
+        <div id="ovAlertList"></div>
+    </div>
+
+    <!-- Ultimas atividades resumida -->
+    <div class="tbl-card">
+        <div class="tbl-head"><h3>&#128337; Ultimas Movimentacoes</h3></div>
+        <div class="tbl-wrap">
+            <table>
+                <thead><tr>
+                    <th>Data/Hora</th><th>Tipo</th><th>Responsavel</th>
+                    <th>Destinatario</th><th>Kit</th><th>iPhone</th>
+                    <th>Android</th><th>Port SRT</th><th>Itens</th>
+                </tr></thead>
+                <tbody id="tbRecent"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Graficos abaixo -->
+    <div class="grid2" style="margin-top:24px">
+        <div class="card">
+            <div class="card-title">&#128200; Movimentacao por Dia</div>
+            <div class="chart-box"><canvas id="chMov"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-title">&#128290; Entregas vs Devoluções</div>
+            <div class="chart-box"><canvas id="chPie"></canvas></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== STATUS DOS KITS ========== -->
+<section class="sec" id="sec-kits">
+    <div class="page-head">
+        <h2>Status dos Kits</h2>
+        <div class="head-actions">
+            <select class="sel" id="fKit" onchange="renderKits()">
+                <option value="all">Todos</option>
+                <option value="uso">Em uso</option>
+                <option value="disp">Disponiveis</option>
+            </select>
+        </div>
+    </div>
+    <div class="kit-grid" id="kitGrid"></div>
+    <div class="empty" id="kitEmpty" style="display:none">
+        <span class="ico">&#128230;</span>
+        <h3>Nenhum kit encontrado</h3>
+        <p>Kits aparecerao aqui apos registros de entrega.</p>
+    </div>
+</section>
+
+<!-- ========== CONFERENCIA DE RETORNO ========== -->
+<section class="sec" id="sec-conferencia">
+    <div class="page-head">
+        <h2>Conferencia de Retorno</h2>
+        <div class="head-actions">
+            <select class="sel" id="confFiltro" onchange="renderConferencia()">
+                <option value="all">Todos os ciclos</option>
+                <option value="perdeu">Com perdas/faltas</option>
+                <option value="ok">Retorno completo</option>
+                <option value="pendente">Ainda em uso</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Resumo KPIs -->
+    <div class="conf-stats-row" id="confStats"></div>
+
+    <!-- Barra de saude geral -->
+    <div class="conf-health-bar-wrap" id="confHealthBar"></div>
+
+    <!-- Alertas de kits pendentes ha muito tempo -->
+    <div id="confAlerts"></div>
+
+    <!-- Graficos: Saude por Kit + Ranking -->
+    <div class="conf-charts-row">
+        <div class="conf-chart-card">
+            <div class="conf-chart-title">&#128202; Saude dos Retornos por Kit</div>
+            <div class="conf-chart-box"><canvas id="chConfSaude"></canvas></div>
+        </div>
+        <div class="conf-chart-card">
+            <div class="conf-chart-title">&#128101; Ranking - Quem Mais Perde Itens</div>
+            <div class="conf-rank-list" id="confRanking"></div>
+        </div>
+    </div>
+
+    <!-- Legenda -->
+    <div class="conf-legend">
+        <div class="conf-legend-item"><div class="conf-legend-dot" style="background:var(--green)"></div> Saiu e voltou OK</div>
+        <div class="conf-legend-item"><div class="conf-legend-dot" style="background:var(--red)"></div> Saiu OK, voltou faltando</div>
+        <div class="conf-legend-item"><div class="conf-legend-dot" style="background:var(--yellow)"></div> Ja saiu faltando</div>
+        <div class="conf-legend-item"><div class="conf-legend-dot" style="background:var(--text2)"></div> Faltou na entrega e devolucao</div>
+        <div class="conf-legend-item"><div class="conf-legend-dot" style="background:var(--cyan)"></div> Recuperado na devolucao</div>
+    </div>
+
+    <!-- Lista de ciclos -->
+    <div id="confList"></div>
+</section>
+
+<!-- ========== ITENS FALTANDO ========== -->
+<section class="sec" id="sec-faltando">
+    <div class="page-head"><h2>Analise de Itens Faltando</h2></div>
+    <div class="grid2" style="margin-bottom:20px">
+        <div class="card full">
+            <div class="card-title">&#9888;&#65039; Top Itens Mais Faltados</div>
+            <div class="chart-box" style="height:340px"><canvas id="chFalta"></canvas></div>
+        </div>
+    </div>
+    <div class="tbl-card">
+        <div class="tbl-head"><h3>&#128203; Registros com Itens Faltando</h3></div>
+        <div class="tbl-wrap">
+            <table>
+                <thead><tr><th>Data</th><th>Tipo</th><th>Responsavel</th><th>Itens Faltando</th><th>Qtd</th></tr></thead>
+                <tbody id="tbFalta"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ========== HISTORICO ========== -->
+<section class="sec" id="sec-historico">
+    <div class="page-head">
+        <h2>Historico Completo</h2>
+        <div class="head-actions">
+            <input class="inp" id="hSearch" placeholder="Buscar nome, item..." oninput="renderHist()" style="width:200px">
+            <select class="sel" id="hTipo" onchange="renderHist()">
+                <option value="all">Todos</option>
+                <option value="ENTREGA">Entregas</option>
+                <option value="DEVOLUÇÃO">Devoluções</option>
+            </select>
+            <button class="btn-sm" onclick="exportCSV()">&#128190; CSV</button>
+        </div>
+    </div>
+    <div class="tbl-card">
+        <div class="tbl-wrap">
+            <table>
+                <thead><tr>
+                    <th>Data/Hora</th><th>Tipo</th><th>Nome 1</th><th>Nome 2</th>
+                    <th>Tipo Kit</th><th>iPhone</th><th>Android</th><th>Port SRT</th>
+                    <th>Itens OK</th><th>Itens Faltando</th><th>Obs</th>
+                </tr></thead>
+                <tbody id="tbHist"></tbody>
+            </table>
+        </div>
+        <div class="pag" id="histPag"></div>
+    </div>
+</section>
+
+<!-- ========== TIMELINE ========== -->
+<section class="sec" id="sec-timeline">
+    <div class="page-head">
+        <h2>Linha do Tempo</h2>
+        <div class="head-actions">
+            <select class="sel" id="tlTipo" onchange="renderTL()">
+                <option value="all">Todos</option>
+                <option value="ENTREGA">Entregas</option>
+                <option value="DEVOLUÇÃO">Devoluções</option>
+            </select>
+        </div>
+    </div>
+    <div class="card"><div class="tl" id="tlBox"></div></div>
+</section>
+
+</div>
+
+<script>
+// ===== CONFIG =====
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNSDPOQc0Ev7DH3dP4OV_h7u05OEsIXrDziORDf19KV6lFRHwt6lfCkUPRK3r1X2kR9w/exec';
+
+const TOTAL_KITS = 6;
+
+const ITENS = [
+    'SmartRig Completo','Conjunto Microfone DJI (Sem Fio)','Microfone de Mão com Fio',
+    'Cabo XLR para USB-C','Estação de Carregamento','Bastão de Microfone',
+    'Cabos USB-C','Cabo Mini P2','Powerbank','Tripé 1.70M',
+    'Mochila do Tripé','Mochila de Transporte do Kit','Espuma',
+    'Fone sem Fio','Fone com Fio','Cabo Adaptador de Áudio',
+    'Luz de Vídeo LED','Tripé Rotativo','Cabo Áudio e Vídeo'
+];
+
+let all = [], filtered = [], charts = {}, pagina = 1;
+const PER_PAGE = 15;
+
+// ===== NAVEGACAO =====
+document.querySelectorAll('[data-sec]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const sec = btn.dataset.sec;
+        document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.mob-nav button').forEach(b => b.classList.remove('on'));
+        document.getElementById('sec-' + sec).classList.add('on');
+        document.querySelectorAll(`.nav-btn[data-sec="${sec}"]`).forEach(b => b.classList.add('active'));
+        document.querySelectorAll(`.mob-nav button[data-sec="${sec}"]`).forEach(b => b.classList.add('on'));
+    });
+});
+
+// ===== PARSE DATE =====
+function pDate(s) {
+    if (!s) return new Date(0);
+    const p = s.replace(',','').split(/\s+/);
+    const d = p[0].split('/'), t = (p[1]||'00:00:00').split(':');
+    return new Date(+d[2], d[1]-1, +d[0], +t[0]||0, +t[1]||0, +t[2]||0);
+}
+
+// ===== HELPERS =====
+function tempoDesde(dataStr) {
+    const dt = pDate(dataStr);
+    const now = new Date();
+    const diff = now - dt;
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    const dias = Math.floor(hrs / 24);
+    if (dias > 0) return dias + ' dia' + (dias > 1 ? 's' : '');
+    if (hrs > 0) return hrs + 'h' + (mins % 60) + 'min';
+    return mins + ' min';
+}
+
+function buildRingSVG(value, total, color) {
+    const pct = total > 0 ? value / total : 0;
+    const r = 22, circ = 2 * Math.PI * r;
+    const offset = circ * (1 - pct);
+    return `<svg width="56" height="56" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="${r}" class="ring-bg"/>
+        <circle cx="28" cy="28" r="${r}" class="ring-fill" style="stroke:${color};stroke-dasharray:${circ};stroke-dashoffset:${offset}"/>
+    </svg>`;
+}
+
+// Calcula status atual de cada kit baseado em TODOS os registros
+function calcKitStatus() {
+    const kits = {};
+    const sorted = [...all].sort((a, b) => pDate(a.dataHora) - pDate(b.dataHora));
+
+    sorted.forEach((r, idx) => {
+        // Chave unica: combinacao tipoKit + iphone + android
+        const key = (r.tipoKit || 'Kit') + ' | ' + (r.iphone || '?') + ' + ' + (r.android || '?');
+
+        if (r.tipo === 'ENTREGA') {
+            kits[key] = {
+                key, st: 'uso',
+                tipo: r.tipoKit, iphone: r.iphone, android: r.android,
+                portSrt: r.portSrt || '',
+                comQuem: r.nome2, entregaPor: r.nome1,
+                dtEntrega: r.dataHora,
+                conf: r.itensConferidos, falt: r.itensFaltando,
+                obs: r.observacao,
+                historico: (kits[key]?.historico || 0) + 1
+            };
+        } else if (kits[key]) {
+            kits[key].st = 'disp';
+            kits[key].dtDevolucao = r.dataHora;
+            kits[key].devPor = r.nome1;
+            kits[key].recPor = r.nome2;
+            kits[key].confDev = r.itensConferidos;
+            kits[key].faltDev = r.itensFaltando;
+            kits[key].historico = (kits[key].historico || 0) + 1;
+        }
+    });
+
+    return Object.values(kits);
+}
+
+// ===== GOOGLE SHEETS CONFIG =====
+const SHEET_ID = '1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0';
+const SHEET_GID = '1349869099';
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
+
+// Colunas esperadas do Sheets:
+// Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
+
+function parseCSV(csv) {
+    const linhas = [];
+    let current = '';
+    let inQuotes = false;
+
+    // Lidar com campos entre aspas que podem ter virgulas e quebras de linha
+    for (let i = 0; i < csv.length; i++) {
+        const ch = csv[i];
+        if (ch === '"') {
+            if (inQuotes && csv[i + 1] === '"') { current += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+        } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+            if (current.trim()) linhas.push(current);
+            current = '';
+            if (ch === '\r' && csv[i + 1] === '\n') i++;
+        } else {
+            current += ch;
+        }
+    }
+    if (current.trim()) linhas.push(current);
+
+    // Separar cada linha em colunas (CSV com virgula)
+    return linhas.map(linha => {
+        const cols = [];
+        let field = '';
+        let inQ = false;
+        for (let i = 0; i < linha.length; i++) {
+            const c = linha[i];
+            if (c === '"') {
+                if (inQ && linha[i + 1] === '"') { field += '"'; i++; }
+                else { inQ = !inQ; }
+            } else if (c === ',' && !inQ) {
+                cols.push(field); field = '';
+            } else {
+                field += c;
+            }
+        }
+        cols.push(field);
+        return cols;
+    });
+}
+
+function sheetRowToRegistro(row) {
+    // Mapeia colunas do Sheets para objeto do dashboard
+    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
+    return {
+        dataHora:        (row[0] || '').trim(),
+        tipo:            (row[1] || '').trim().toUpperCase(),
+        nome1:           (row[2] || '').trim(),
+        nome2:           (row[3] || '').trim(),
+        tipoKit:         (row[4] || '').trim(),
+        iphone:          (row[5] || '').trim(),
+        android:         (row[6] || '').trim(),
+        portSrt:         (row[7] || '').trim(),
+        itensConferidos: (row[8] || '').trim(),
+        itensFaltando:   (row[9] || '').trim(),
+        observacao:      (row[10] || '').trim(),
+        fotoUrl:         (row[11] || '').trim()
+    };
+}
+
+// Parser alternativo usando a API gviz (retorna JSON-like)
+function parseGviz(text) {
+    // O gviz retorna: google.visualization.Query.setResponse({...})
+    const match = text.match(/setResponse\(([\s\S]+)\);?$/);
+    if (!match) return null;
+
+    const json = JSON.parse(match[1]);
+    if (!json.table || !json.table.rows) return null;
+
+    const cols = json.table.cols.map(c => (c.label || '').trim());
+    console.log('[KitMojo] Colunas da planilha:', cols);
+
+    return json.table.rows.map(row => {
+        const vals = row.c.map(cell => {
+            if (!cell) return '';
+            // Celulas de data podem ter formato especial
+            if (cell.f) return cell.f;
+            if (cell.v !== null && cell.v !== undefined) return String(cell.v);
+            return '';
+        });
+        return sheetRowToRegistro(vals);
+    }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+}
+
+// ===== CARREGAR VIA JSONP (bypass CORS para file:///) =====
+function loadSheetJSONP() {
+    return new Promise((resolve, reject) => {
+        // Callback global que o Google vai chamar
+        const cbName = '_kitmojoCallback_' + Date.now();
+        const timeout = setTimeout(() => {
+            delete window[cbName];
+            script.remove();
+            reject(new Error('Timeout'));
+        }, 10000);
+
+        window[cbName] = function(response) {
+            clearTimeout(timeout);
+            delete window[cbName];
+            script.remove();
+            resolve(response);
+        };
+
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${SHEET_GID}`;
+        const script = document.createElement('script');
+        script.src = url;
+        script.onerror = () => {
+            clearTimeout(timeout);
+            delete window[cbName];
+            script.remove();
+            reject(new Error('Script load error'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+function parseGvizResponse(response) {
+    if (!response || !response.table || !response.table.rows) return [];
+
+    const cols = response.table.cols.map(c => (c.label || '').trim());
+    console.log('[KitMojo] Colunas da planilha:', cols);
+
+    return response.table.rows.map(row => {
+        const vals = (row.c || []).map(cell => {
+            if (!cell) return '';
+            if (cell.f) return cell.f; // valor formatado (melhor para datas)
+            if (cell.v !== null && cell.v !== undefined) return String(cell.v);
+            return '';
+        });
+        return sheetRowToRegistro(vals);
+    }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+}
+
+// ===== CARREGAR =====
+async function load() {
+    const btn = document.getElementById('btnRef');
+    btn.disabled = true; btn.textContent = 'Carregando...';
+    document.getElementById('load').classList.add('on');
+
+    let loaded = false;
+
+    // Tentativa 1: JSONP via gviz (funciona de file:/// sem CORS)
+    try {
+        console.log('[KitMojo] Carregando via JSONP/gviz...');
+        const response = await loadSheetJSONP();
+        const dados = parseGvizResponse(response);
+        if (dados.length > 0) {
+            all = dados;
+            loaded = true;
+            console.log('[KitMojo] Carregado via JSONP:', all.length, 'registros');
+        }
+    } catch (e) {
+        console.warn('[KitMojo] JSONP falhou:', e.message);
+    }
+
+    // Tentativa 2: fetch CSV (funciona se estiver em servidor web)
+    if (!loaded) {
+        try {
+            console.log('[KitMojo] Tentando via CSV...');
+            const r = await fetch(SHEET_CSV_URL);
+            if (r.ok) {
+                const csv = await r.text();
+                const linhas = parseCSV(csv);
+                if (linhas.length > 1) {
+                    all = linhas.slice(1)
+                        .map(row => sheetRowToRegistro(row))
+                        .filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+                    if (all.length > 0) { loaded = true; console.log('[KitMojo] Carregado via CSV:', all.length); }
+                }
+            }
+        } catch (e) {
+            console.warn('[KitMojo] CSV falhou:', e.message);
+        }
+    }
+
+    // Tentativa 3: Apps Script
+    if (!loaded) {
+        try {
+            const r = await fetch(SCRIPT_URL + '?action=getData', { redirect: 'follow' });
+            if (r.ok) {
+                const j = await r.json();
+                const arr = Array.isArray(j) ? j : (j.registros || j.data || []);
+                if (arr.length > 0) { all = arr; loaded = true; }
+            }
+        } catch (e) { console.warn('[KitMojo] Apps Script falhou:', e.message); }
+    }
+
+    // Fallback: dados demo
+    if (!loaded) {
+        console.warn('[KitMojo] Nenhuma fonte, usando dados demo');
+        all = demo();
+    }
+
+    all.sort((a, b) => pDate(b.dataHora) - pDate(a.dataHora));
+    filtrar();
+
+    // Atualizar UI
+    const fonte = loaded ? 'Google Sheets' : 'Dados de demonstracao';
+    document.getElementById('lastSync').textContent = fonte + ' | ' + new Date().toLocaleString('pt-BR');
+
+    document.getElementById('load').classList.remove('on');
+    btn.disabled = false; btn.innerHTML = '&#8635; Atualizar Dados';
+}
+
+// ===== FILTRAR =====
+function filtrar() {
+    const v = document.getElementById('fPeriodo').value;
+    if (v === 'all') { filtered = [...all]; }
+    else {
+        const dias = +v, now = new Date();
+        const lim = dias === 0
+            ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            : new Date(now - dias * 864e5);
+        filtered = all.filter(r => pDate(r.dataHora) >= lim);
+    }
+    renderAll();
+}
+
+function renderAll() {
+    renderOverview(); renderCharts(); renderRecent();
+    renderKits(); renderConferencia(); renderFaltando(); renderChartFalta();
+    renderHist(); renderTL();
+}
+
+// ===== OVERVIEW - PAINEL DOS 6 KITS =====
+function renderOverview() {
+    const kitList = calcKitStatus();
+    const emUso = kitList.filter(k => k.st === 'uso').length;
+    const disp = TOTAL_KITS - emUso;
+    const comFalta = kitList.filter(k => k.st === 'uso' && k.falt?.trim()).length;
+    const totalMov = filtered.length;
+
+    // === Summary rings ===
+    document.getElementById('ovSummary').innerHTML = `
+        <div class="ov-stat">
+            <div class="ov-stat-ring">
+                ${buildRingSVG(disp, TOTAL_KITS, 'var(--green)')}
+                <div class="ring-text" style="color:var(--green)">${disp}</div>
+            </div>
+            <div class="ov-stat-info">
+                <div class="ov-stat-label">Disponiveis</div>
+                <div class="ov-stat-val">${disp} de ${TOTAL_KITS}</div>
+            </div>
+        </div>
+        <div class="ov-stat">
+            <div class="ov-stat-ring">
+                ${buildRingSVG(emUso, TOTAL_KITS, 'var(--yellow)')}
+                <div class="ring-text" style="color:var(--yellow)">${emUso}</div>
+            </div>
+            <div class="ov-stat-info">
+                <div class="ov-stat-label">Em Uso</div>
+                <div class="ov-stat-val">${emUso} de ${TOTAL_KITS}</div>
+            </div>
+        </div>
+        <div class="ov-stat">
+            <div class="ov-stat-ring">
+                ${buildRingSVG(comFalta, TOTAL_KITS, 'var(--red)')}
+                <div class="ring-text" style="color:var(--red)">${comFalta}</div>
+            </div>
+            <div class="ov-stat-info">
+                <div class="ov-stat-label">Com Itens Faltando</div>
+                <div class="ov-stat-val">${comFalta} kit(s)</div>
+            </div>
+        </div>
+        <div class="ov-stat">
+            <div class="ov-stat-ring">
+                ${buildRingSVG(totalMov, Math.max(totalMov, 1), 'var(--purple)')}
+                <div class="ring-text" style="color:var(--purple)">${totalMov}</div>
+            </div>
+            <div class="ov-stat-info">
+                <div class="ov-stat-label">Movimentacoes</div>
+                <div class="ov-stat-val">${filtered.filter(r => r.tipo === 'ENTREGA').length} ent / ${filtered.filter(r => r.tipo === 'DEVOLUÇÃO').length} dev</div>
+            </div>
+        </div>
+    `;
+
+    // === Grid dos kits ===
+    const grid = document.getElementById('ovGrid');
+
+    if (!kitList.length) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ico">&#128230;</span><h3>Nenhum kit registrado ainda</h3><p>Use o formulario de entrega para registrar o primeiro kit.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = kitList.map((kit, i) => {
+        const emUso = kit.st === 'uso';
+        const conf = kit.conf ? kit.conf.split(',').filter(x => x.trim()).length : 0;
+        const pct = Math.round(conf / ITENS.length * 100);
+        const barColor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
+        const faltList = kit.falt?.trim() ? kit.falt.split(',').map(x => x.trim()).filter(Boolean) : [];
+
+        return `<div class="ov-kit">
+            <div class="ov-kit-top">
+                <div>
+                    <div class="ov-kit-num">Kit #${i + 1}</div>
+                    <div class="ov-kit-title">${kit.tipo || 'KitMojo'}</div>
+                </div>
+                <div class="ov-kit-status ${emUso ? 'uso' : 'disp'}">
+                    <span class="pulse"></span>
+                    ${emUso ? 'Em Uso' : 'Disponivel'}
+                </div>
+            </div>
+            <div class="ov-kit-body">
+                <div class="ov-kit-phones">
+                    <div class="ov-phone">
+                        <span class="ph-ico">&#127823;</span>
+                        <div><div style="font-size:10px;color:var(--text2)">iPhone</div><strong>${kit.iphone || '-'}</strong></div>
+                    </div>
+                    <div class="ov-phone">
+                        <span class="ph-ico">&#129302;</span>
+                        <div><div style="font-size:10px;color:var(--text2)">Android</div><strong>${kit.android || '-'}</strong></div>
+                    </div>
+                </div>
+
+                ${kit.portSrt ? `<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);margin-bottom:14px;font-size:13px">
+                    <span style="font-size:15px">&#128268;</span>
+                    <span style="color:var(--text2)">Port SRT</span>
+                    <strong style="color:var(--cyan);margin-left:auto">${kit.portSrt}</strong>
+                </div>` : ''}
+
+                <div class="ov-kit-info">
+                    ${emUso ? `
+                        <div class="ov-kit-row">
+                            <span class="lbl">Com quem</span>
+                            <span class="val">${kit.comQuem}</span>
+                        </div>
+                        <div class="ov-kit-row">
+                            <span class="lbl">Entregue por</span>
+                            <span class="val">${kit.entregaPor}</span>
+                        </div>
+                        <div class="ov-kit-row">
+                            <span class="lbl">Saiu em</span>
+                            <span class="val">${kit.dtEntrega}</span>
+                        </div>
+                    ` : `
+                        <div class="ov-kit-row">
+                            <span class="lbl">Devolvido por</span>
+                            <span class="val">${kit.devPor || '-'}</span>
+                        </div>
+                        <div class="ov-kit-row">
+                            <span class="lbl">Recebido por</span>
+                            <span class="val">${kit.recPor || '-'}</span>
+                        </div>
+                        <div class="ov-kit-row">
+                            <span class="lbl">Devolvido em</span>
+                            <span class="val">${kit.dtDevolucao || '-'}</span>
+                        </div>
+                    `}
+                    <div class="ov-kit-row">
+                        <span class="lbl">Movimentacoes</span>
+                        <span class="val">${kit.historico || 0}x</span>
+                    </div>
+                </div>
+
+                ${emUso ? `<div class="ov-kit-tempo">
+                    &#9200; Fora ha <span class="tempo-val">${tempoDesde(kit.dtEntrega)}</span>
+                </div>` : ''}
+
+                <div class="ov-kit-bar">
+                    <div class="ov-bar-lbl">
+                        <span style="color:var(--text2)">Itens conferidos</span>
+                        <span style="color:${barColor};font-weight:700">${conf}/${ITENS.length}</span>
+                    </div>
+                    <div class="ov-bar-track">
+                        <div class="ov-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+                    </div>
+                </div>
+
+                ${faltList.length ? `<div class="ov-kit-alert">
+                    <strong>&#9888; ${faltList.length} ite${faltList.length > 1 ? 'ns faltando' : 'm faltando'}:</strong>
+                    ${faltList.join(', ')}
+                </div>` : ''}
+
+                ${kit.obs ? `<div style="margin-top:8px;font-size:12px;color:var(--text2);font-style:italic">Obs: ${kit.obs}</div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+
+    // === Alertas ===
+    const alerts = [];
+    kitList.forEach((kit, i) => {
+        if (kit.st === 'uso') {
+            const dias = Math.floor((new Date() - pDate(kit.dtEntrega)) / 864e5);
+            if (dias >= 7) {
+                alerts.push({ ico: '&#128680;', text: `<strong>Kit #${i + 1}</strong> (${kit.tipo}) esta com <strong>${kit.comQuem}</strong> ha <strong>${dias} dias</strong>`, time: kit.dtEntrega, color: 'var(--red)' });
+            }
+            if (kit.falt?.trim()) {
+                const n = kit.falt.split(',').filter(x => x.trim()).length;
+                alerts.push({ ico: '&#9888;&#65039;', text: `<strong>Kit #${i + 1}</strong> saiu com <strong>${n} ite${n > 1 ? 'ns faltando' : 'm faltando'}</strong>`, time: kit.dtEntrega, color: 'var(--yellow)' });
+            }
+        }
+    });
+
+    const alertBox = document.getElementById('ovAlerts');
+    const alertList = document.getElementById('ovAlertList');
+    if (alerts.length) {
+        alertBox.style.display = 'block';
+        alertList.innerHTML = alerts.map(a => `
+            <div class="ov-alert-item">
+                <span class="a-ico">${a.ico}</span>
+                <span class="a-text">${a.text}</span>
+                <span class="a-time">${a.time}</span>
+            </div>
+        `).join('');
+    } else {
+        alertBox.style.display = 'none';
+    }
+}
+
+// ===== CHARTS =====
+function kill(n) { if (charts[n]) { charts[n].destroy(); charts[n] = null; } }
+
+function renderCharts() {
+    // Movimentacao
+    kill('mov');
+    const dm = {};
+    filtered.forEach(r => {
+        const d = r.dataHora?.split(',')[0]?.split(' ')[0] || '?';
+        if (!dm[d]) dm[d] = { e: 0, d: 0 };
+        r.tipo === 'ENTREGA' ? dm[d].e++ : dm[d].d++;
+    });
+    const lbs = Object.keys(dm).sort((a, b) => { const A = a.split('/'), B = b.split('/'); return new Date(A[2], A[1] - 1, A[0]) - new Date(B[2], B[1] - 1, B[0]); });
+
+    charts.mov = new Chart(document.getElementById('chMov'), {
+        type: 'bar',
+        data: {
+            labels: lbs,
+            datasets: [
+                { label: 'Entregas', data: lbs.map(l => dm[l].e), backgroundColor: 'rgba(34,197,94,0.7)', borderRadius: 4 },
+                { label: 'Devoluções', data: lbs.map(l => dm[l].d), backgroundColor: 'rgba(6,182,212,0.7)', borderRadius: 4 }
+            ]
+        },
+        options: chartOpts()
+    });
+
+    // Pizza
+    kill('pie');
+    const ne = filtered.filter(r => r.tipo === 'ENTREGA').length;
+    const nd = filtered.length - ne;
+    charts.pie = new Chart(document.getElementById('chPie'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Entregas', 'Devoluções'],
+            datasets: [{ data: [ne, nd], backgroundColor: ['rgba(34,197,94,0.8)', 'rgba(6,182,212,0.8)'], borderWidth: 2, borderColor: ['rgba(34,197,94,1)', 'rgba(6,182,212,1)'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: '#8b8fa3', padding: 16 } } } }
+    });
+}
+
+function chartOpts() {
+    return {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#8b8fa3' } } },
+        scales: {
+            x: { ticks: { color: '#8b8fa3', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#8b8fa3', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+        }
+    };
+}
+
+// ===== RECENTES =====
+function renderRecent() {
+    const tb = document.getElementById('tbRecent');
+    const recs = filtered.slice(0, 8);
+    if (!recs.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text2)">Nenhum registro</td></tr>'; return; }
+    tb.innerHTML = recs.map(r => {
+        const conf = r.itensConferidos ? r.itensConferidos.split(',').filter(i => i.trim()).length : 0;
+        const ok = !r.itensFaltando?.trim();
+        return `<tr>
+            <td>${r.dataHora || '-'}</td>
+            <td><span class="badge ${r.tipo === 'ENTREGA' ? 'b-ent' : 'b-dev'}">${r.tipo}</span></td>
+            <td>${r.nome1 || '-'}</td><td>${r.nome2 || '-'}</td>
+            <td>${r.tipoKit || '-'}</td><td>${r.iphone || '-'}</td><td>${r.android || '-'}</td>
+            <td style="color:var(--cyan);font-weight:600">${r.portSrt || '-'}</td>
+            <td><span class="badge ${ok ? 'b-ok' : 'b-nok'}">${ok ? 'Completo' : ITENS.length - conf + ' faltando'}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+// ===== STATUS KITS (pagina separada) =====
+function renderKits() {
+    const grid = document.getElementById('kitGrid');
+    const f = document.getElementById('fKit').value;
+    const kitList = calcKitStatus();
+
+    let kits = kitList;
+    if (f === 'uso') kits = kits.filter(k => k.st === 'uso');
+    if (f === 'disp') kits = kits.filter(k => k.st === 'disp');
+
+    if (!kits.length) { grid.innerHTML = ''; document.getElementById('kitEmpty').style.display = 'block'; return; }
+    document.getElementById('kitEmpty').style.display = 'none';
+
+    grid.innerHTML = kits.map((v, i) => {
+        const emUso = v.st === 'uso';
+        const conf = v.conf ? v.conf.split(',').filter(x => x.trim()).length : 0;
+        const pct = Math.round(conf / ITENS.length * 100);
+        const cor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
+        return `<div class="kit-c">
+            <div class="kit-c-head">
+                <div><div class="kit-c-title">Kit #${i + 1} - ${v.tipo}</div><div class="kit-c-sub">${v.iphone} + ${v.android}</div></div>
+                <span class="badge ${emUso ? 'b-uso' : 'b-disp'}">${emUso ? 'Em Uso' : 'Disponivel'}</span>
+            </div>
+            <div class="kit-row"><span class="kit-row-l">${emUso ? 'Com quem' : 'Devolvido por'}</span><span>${emUso ? v.comQuem : (v.devPor || '-')}</span></div>
+            <div class="kit-row"><span class="kit-row-l">${emUso ? 'Entregue por' : 'Recebido por'}</span><span>${emUso ? v.entregaPor : (v.recPor || '-')}</span></div>
+            <div class="kit-row"><span class="kit-row-l">${emUso ? 'Data entrega' : 'Data devolucao'}</span><span>${emUso ? v.dtEntrega : (v.dtDevolucao || '-')}</span></div>
+            ${emUso ? `<div class="kit-row"><span class="kit-row-l">Tempo fora</span><span style="color:var(--yellow);font-weight:600">${tempoDesde(v.dtEntrega)}</span></div>` : ''}
+            ${v.falt?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.falt}</span></div>` : ''}
+            ${v.obs ? `<div class="kit-row"><span class="kit-row-l">Obs</span><span style="font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.obs}</span></div>` : ''}
+            <div class="prog">
+                <div class="prog-lbl"><span style="color:var(--text2)">Itens conferidos</span><span>${conf}/${ITENS.length} (${pct}%)</span></div>
+                <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${cor}"></div></div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ===== ITENS FALTANDO =====
+function renderFaltando() {
+    const tb = document.getElementById('tbFalta');
+    const comF = filtered.filter(r => r.itensFaltando?.trim()).map(r => ({ ...r, fl: r.itensFaltando.split(',').filter(i => i.trim()) }));
+    if (!comF.length) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text2)">Nenhum item faltando</td></tr>'; return; }
+    tb.innerHTML = comF.map(r => `<tr>
+        <td>${r.dataHora || '-'}</td>
+        <td><span class="badge ${r.tipo === 'ENTREGA' ? 'b-ent' : 'b-dev'}">${r.tipo}</span></td>
+        <td>${r.nome1 || '-'}</td>
+        <td style="max-width:300px;white-space:normal;font-size:12px;color:var(--red)">${r.itensFaltando}</td>
+        <td style="text-align:center;font-weight:700;color:var(--red)">${r.fl.length}</td>
+    </tr>`).join('');
+}
+
+function renderChartFalta() {
+    kill('falta');
+    const ctx = document.getElementById('chFalta');
+    const mc = {}; ITENS.forEach(i => mc[i] = 0);
+    filtered.forEach(r => {
+        if (r.itensFaltando?.trim()) r.itensFaltando.split(',').map(i => i.trim()).filter(Boolean).forEach(i => { if (mc[i] !== undefined) mc[i]++; });
+    });
+    const s = Object.entries(mc).filter(([_, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+    if (!s.length) { const c2 = ctx.getContext('2d'); c2.font = '15px Segoe UI'; c2.fillStyle = '#8b8fa3'; c2.textAlign = 'center'; c2.fillText('Nenhum item faltando', ctx.width / 2, ctx.height / 2); return; }
+    charts.falta = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: s.map(([k]) => k), datasets: [{ label: 'Vezes faltando', data: s.map(([_, v]) => v), backgroundColor: s.map((_, i) => `rgba(239,68,68,${Math.max(0.9 - i * 0.04, 0.3)})`), borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b8fa3', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }, y: { ticks: { color: '#e4e6eb', font: { size: 12 } }, grid: { display: false } } } }
+    });
+}
+
+// ===== CONFERENCIA DE RETORNO =====
+function calcCiclos() {
+    const sorted = [...all].sort((a, b) => pDate(a.dataHora) - pDate(b.dataHora));
+    const ciclos = [];
+    const openEntregas = {}; // key -> entrega pendente
+
+    sorted.forEach(r => {
+        const key = (r.tipoKit || '') + '|' + (r.iphone || '') + '|' + (r.android || '');
+        if (r.tipo === 'ENTREGA') {
+            openEntregas[key] = r;
+        } else if (r.tipo === 'DEVOLUÇÃO' && openEntregas[key]) {
+            ciclos.push({ entrega: openEntregas[key], devolucao: r, key });
+            delete openEntregas[key];
+        }
+    });
+
+    // Kits ainda em uso (entrega sem devolução)
+    Object.entries(openEntregas).forEach(([key, ent]) => {
+        ciclos.push({ entrega: ent, devolucao: null, key });
+    });
+
+    // Mais recente primeiro
+    ciclos.sort((a, b) => pDate(b.entrega.dataHora) - pDate(a.entrega.dataHora));
+    return ciclos;
+}
+
+function analisarCiclo(ciclo) {
+    const entItens = ciclo.entrega.itensConferidos
+        ? ciclo.entrega.itensConferidos.split(',').map(i => i.trim()).filter(Boolean) : [];
+    const entFalt = ciclo.entrega.itensFaltando
+        ? ciclo.entrega.itensFaltando.split(',').map(i => i.trim()).filter(Boolean) : [];
+
+    let devItens = [], devFalt = [];
+    if (ciclo.devolucao) {
+        devItens = ciclo.devolucao.itensConferidos
+            ? ciclo.devolucao.itensConferidos.split(',').map(i => i.trim()).filter(Boolean) : [];
+        devFalt = ciclo.devolucao.itensFaltando
+            ? ciclo.devolucao.itensFaltando.split(',').map(i => i.trim()).filter(Boolean) : [];
+    }
+
+    // Classificar cada item
+    const resultado = ITENS.map(item => {
+        const saiuOK = entItens.includes(item);
+        const saiuFalt = entFalt.includes(item);
+
+        if (!ciclo.devolucao) {
+            return { item, status: saiuOK ? 'em-uso' : 'faltava-ent', saiuOK, voltouOK: null };
+        }
+
+        const voltouOK = devItens.includes(item);
+        const voltouFalt = devFalt.includes(item);
+
+        if (saiuOK && voltouOK) return { item, status: 'ok', saiuOK: true, voltouOK: true };
+        if (saiuOK && voltouFalt) return { item, status: 'perdeu', saiuOK: true, voltouOK: false }; // SAIU OK, VOLTOU FALTANDO
+        if (saiuFalt && voltouFalt) return { item, status: 'faltava-ambos', saiuOK: false, voltouOK: false };
+        if (saiuFalt && voltouOK) return { item, status: 'recuperou', saiuOK: false, voltouOK: true }; // raro: faltava e agora voltou
+        return { item, status: 'indefinido', saiuOK, voltouOK };
+    });
+
+    const perdidos = resultado.filter(r => r.status === 'perdeu');
+    const eStatus = !ciclo.devolucao ? 'pendente' : (perdidos.length > 0 ? 'perdeu' : 'ok');
+
+    return { resultado, perdidos, status: eStatus };
+}
+
+function calcTempoUso(dtEntrega, dtDevolucao) {
+    const e = pDate(dtEntrega), d = pDate(dtDevolucao);
+    const diff = d - e;
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    const dias = Math.floor(hrs / 24);
+    if (dias > 0) return dias + 'd ' + (hrs % 24) + 'h';
+    if (hrs > 0) return hrs + 'h ' + (mins % 60) + 'min';
+    return mins + 'min';
+}
+
+function buildHealthRing(okCount, total, size) {
+    size = size || 42;
+    const pct = total > 0 ? okCount / total : 0;
+    const pctNum = Math.round(pct * 100);
+    const r = (size / 2) - 4, circ = 2 * Math.PI * r;
+    const offset = circ * (1 - pct);
+    const color = pct >= 1 ? 'var(--green)' : pct >= 0.8 ? 'var(--yellow)' : 'var(--red)';
+    return `<div class="conf-health-ring" style="width:${size}px;height:${size}px">
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            <circle cx="${size/2}" cy="${size/2}" r="${r}" class="hr-bg"/>
+            <circle cx="${size/2}" cy="${size/2}" r="${r}" class="hr-fill" style="stroke:${color};stroke-dasharray:${circ};stroke-dashoffset:${offset}"/>
+        </svg>
+        <div class="hr-text" style="color:${color};font-size:${size > 42 ? 13 : 11}px">${pctNum}%</div>
+    </div>`;
+}
+
+function renderConferencia() {
+    const ciclos = calcCiclos();
+    const filtro = document.getElementById('confFiltro')?.value || 'all';
+
+    // Analisar todos
+    const analisados = ciclos.map(c => ({ ...c, analise: analisarCiclo(c) }));
+
+    // Stats
+    const totalCiclos = analisados.length;
+    const completos = analisados.filter(c => c.analise.status === 'ok').length;
+    const comPerda = analisados.filter(c => c.analise.status === 'perdeu').length;
+    const pendentes = analisados.filter(c => c.analise.status === 'pendente').length;
+    const devolvidos = completos + comPerda;
+    let totalItensPerdidos = 0;
+    analisados.forEach(c => { totalItensPerdidos += c.analise.perdidos.length; });
+
+    // Taxa de saude geral
+    const totalItensDevolvidos = devolvidos * ITENS.length;
+    const taxaSaude = totalItensDevolvidos > 0 ? Math.round(((totalItensDevolvidos - totalItensPerdidos) / totalItensDevolvidos) * 100) : 100;
+
+    // Itens mais perdidos
+    const perdaCount = {};
+    analisados.forEach(c => {
+        c.analise.perdidos.forEach(p => {
+            perdaCount[p.item] = (perdaCount[p.item] || 0) + 1;
+        });
+    });
+    const topPerdidos = Object.entries(perdaCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+    // === KPI Stats ===
+    document.getElementById('confStats').innerHTML = `
+        <div class="conf-stat-card">
+            <div class="conf-stat-val" style="color:var(--purple)">${totalCiclos}</div>
+            <div class="conf-stat-lbl">Total de Ciclos</div>
+        </div>
+        <div class="conf-stat-card">
+            <div class="conf-stat-val" style="color:var(--green)">${completos}</div>
+            <div class="conf-stat-lbl">Retornos Completos</div>
+        </div>
+        <div class="conf-stat-card">
+            <div class="conf-stat-val" style="color:var(--red)">${comPerda}</div>
+            <div class="conf-stat-lbl">Retornos com Perda</div>
+        </div>
+        <div class="conf-stat-card">
+            <div class="conf-stat-val" style="color:var(--yellow)">${pendentes}</div>
+            <div class="conf-stat-lbl">Ainda em Uso</div>
+        </div>
+        <div class="conf-stat-card">
+            <div class="conf-stat-val" style="color:var(--red)">${totalItensPerdidos}</div>
+            <div class="conf-stat-lbl">Total Itens Perdidos</div>
+        </div>
+        <div class="conf-stat-card">
+            <div class="conf-stat-val" style="color:${taxaSaude >= 90 ? 'var(--green)' : taxaSaude >= 70 ? 'var(--yellow)' : 'var(--red)'};font-size:32px">${taxaSaude}%</div>
+            <div class="conf-stat-lbl">Taxa de Retorno OK</div>
+        </div>
+    `;
+
+    // === Barra de saude geral ===
+    const pctOk = devolvidos > 0 ? Math.round((completos / devolvidos) * 100) : 0;
+    const pctPerda = devolvidos > 0 ? Math.round((comPerda / devolvidos) * 100) : 0;
+    const pctPend = totalCiclos > 0 ? Math.round((pendentes / totalCiclos) * 100) : 0;
+
+    document.getElementById('confHealthBar').innerHTML = `
+        <div class="conf-health-title">&#127919; Saude Geral dos Retornos</div>
+        <div class="conf-health-track">
+            ${completos > 0 ? `<div class="conf-health-seg" style="width:${pctOk}%;background:var(--green)">${pctOk > 8 ? pctOk + '%' : ''}</div>` : ''}
+            ${comPerda > 0 ? `<div class="conf-health-seg" style="width:${pctPerda}%;background:var(--red)">${pctPerda > 8 ? pctPerda + '%' : ''}</div>` : ''}
+            ${pendentes > 0 ? `<div class="conf-health-seg" style="width:${pctPend}%;background:var(--yellow)">${pctPend > 8 ? pctPend + '%' : ''}</div>` : ''}
+        </div>
+        <div class="conf-health-labels">
+            <span style="color:var(--green)">${completos} completo${completos !== 1 ? 's' : ''} (${pctOk}%)</span>
+            <span style="color:var(--red)">${comPerda} com perda${comPerda !== 1 ? 's' : ''} (${pctPerda}%)</span>
+            <span style="color:var(--yellow)">${pendentes} pendente${pendentes !== 1 ? 's' : ''}</span>
+        </div>
+    `;
+
+    // === Alertas: kits pendentes ha mais de 3 dias ===
+    const alertsBox = document.getElementById('confAlerts');
+    const pendentesLongos = analisados.filter(c => {
+        if (c.analise.status !== 'pendente') return false;
+        const diff = new Date() - pDate(c.entrega.dataHora);
+        return diff > 3 * 24 * 60 * 60 * 1000; // 3 dias
+    });
+
+    if (pendentesLongos.length > 0) {
+        alertsBox.innerHTML = pendentesLongos.map(c => {
+            const ent = c.entrega;
+            return `<div class="conf-alert-banner">
+                <span class="conf-alert-ico">&#128680;</span>
+                <div class="conf-alert-text">
+                    <strong>${ent.tipoKit} (${ent.iphone} + ${ent.android})</strong> esta com <strong>${ent.nome2}</strong> ha <strong>${tempoDesde(ent.dataHora)}</strong>.
+                    Entregue por ${ent.nome1} em ${ent.dataHora}.
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        alertsBox.innerHTML = '';
+    }
+
+    // === Grafico de saude por kit (agrupado) ===
+    const kitHealth = {};
+    analisados.forEach(c => {
+        if (c.analise.status === 'pendente') return;
+        const label = (c.entrega.tipoKit || 'Kit') + ' ' + (c.entrega.iphone || '') + ' + ' + (c.entrega.android || '');
+        if (!kitHealth[label]) kitHealth[label] = { ok: 0, perda: 0 };
+        if (c.analise.status === 'ok') kitHealth[label].ok++;
+        else kitHealth[label].perda++;
+    });
+
+    if (charts.confSaude) charts.confSaude.destroy();
+    const kitLabels = Object.keys(kitHealth);
+    const kitOks = kitLabels.map(k => kitHealth[k].ok);
+    const kitPerdas = kitLabels.map(k => kitHealth[k].perda);
+    const shortLabels = kitLabels.map(l => l.length > 25 ? l.substring(0, 22) + '...' : l);
+
+    if (kitLabels.length > 0) {
+        charts.confSaude = new Chart(document.getElementById('chConfSaude'), {
+            type: 'bar',
+            data: {
+                labels: shortLabels,
+                datasets: [
+                    { label: 'Completo', data: kitOks, backgroundColor: 'rgba(34,197,94,0.7)', borderRadius: 4 },
+                    { label: 'Com Perda', data: kitPerdas, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#8b8fa3', font: { size: 11 } } } },
+                scales: {
+                    x: { ticks: { color: '#8b8fa3', font: { size: 10 }, maxRotation: 45 }, grid: { display: false }, stacked: true },
+                    y: { ticks: { color: '#8b8fa3', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, stacked: true, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // === Ranking: quem mais perde itens ===
+    const pessoaPerda = {};
+    analisados.forEach(c => {
+        if (c.analise.status !== 'perdeu') return;
+        // nome2 da entrega = quem retirou o kit (responsavel)
+        const nome = c.entrega.nome2 || 'Desconhecido';
+        if (!pessoaPerda[nome]) pessoaPerda[nome] = { perdas: 0, ciclos: 0, itens: [] };
+        pessoaPerda[nome].perdas += c.analise.perdidos.length;
+        pessoaPerda[nome].ciclos++;
+        c.analise.perdidos.forEach(p => pessoaPerda[nome].itens.push(p.item));
+    });
+
+    const rankSorted = Object.entries(pessoaPerda).sort((a, b) => b[1].perdas - a[1].perdas);
+    const maxPerdas = rankSorted.length > 0 ? rankSorted[0][1].perdas : 1;
+
+    const rankBox = document.getElementById('confRanking');
+    if (rankSorted.length === 0) {
+        rankBox.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)"><div style="font-size:36px;margin-bottom:10px">&#127881;</div><div style="font-size:14px;font-weight:600;color:var(--green)">Nenhuma perda registrada!</div><div style="font-size:12px;margin-top:4px">Todos os kits voltaram completos</div></div>';
+    } else {
+        rankBox.innerHTML = rankSorted.slice(0, 5).map(([nome, data], i) => {
+            const posClass = i < 4 ? ['p1','p2','p3','p4'][i] : 'p4';
+            const barPct = Math.round((data.perdas / maxPerdas) * 100);
+            const barColor = i === 0 ? 'var(--red)' : i === 1 ? 'var(--yellow)' : 'var(--blue)';
+            const topItens = [...new Set(data.itens)].slice(0, 2).join(', ');
+            return `<div class="conf-rank-item">
+                <div class="conf-rank-pos ${posClass}">${i + 1}</div>
+                <div class="conf-rank-info">
+                    <div class="conf-rank-name">${nome}</div>
+                    <div class="conf-rank-detail">${data.perdas} ite${data.perdas > 1 ? 'ns' : 'm'} em ${data.ciclos} ciclo${data.ciclos > 1 ? 's' : ''} ${topItens ? '- ' + topItens : ''}</div>
+                </div>
+                <div class="conf-rank-bar"><div class="conf-rank-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+            </div>`;
+        }).join('');
+    }
+
+    // === Filtrar ciclos para lista ===
+    let filtered2 = analisados;
+    if (filtro === 'perdeu') filtered2 = filtered2.filter(c => c.analise.status === 'perdeu');
+    if (filtro === 'ok') filtered2 = filtered2.filter(c => c.analise.status === 'ok');
+    if (filtro === 'pendente') filtered2 = filtered2.filter(c => c.analise.status === 'pendente');
+
+    const list = document.getElementById('confList');
+
+    if (!filtered2.length) {
+        list.innerHTML = '<div class="empty"><span class="ico">&#128269;</span><h3>Nenhum ciclo encontrado</h3><p>Ciclos de entrega e devolucao aparecerao aqui.</p></div>';
+        return;
+    }
+
+    list.innerHTML = filtered2.map((c, idx) => {
+        const a = c.analise;
+        const ent = c.entrega;
+        const dev = c.devolucao;
+        const kitLabel = (ent.tipoKit || 'Kit') + ' - ' + ent.iphone + ' + ' + ent.android;
+
+        // Status badge
+        let statusClass, statusLabel;
+        if (a.status === 'ok') { statusClass = 'ok'; statusLabel = '&#9989; Retorno Completo'; }
+        else if (a.status === 'perdeu') { statusClass = 'perdeu'; statusLabel = '&#10060; ' + a.perdidos.length + ' ite' + (a.perdidos.length > 1 ? 'ns perdidos' : 'm perdido'); }
+        else { statusClass = 'pendente'; statusLabel = '&#9200; Em uso ha ' + tempoDesde(ent.dataHora); }
+
+        // Health ring
+        const okCount = a.resultado.filter(r => r.status === 'ok' || r.status === 'em-uso').length;
+        const healthPct = dev ? okCount : a.resultado.filter(r => r.status === 'em-uso').length;
+        const healthRing = dev ? buildHealthRing(okCount, ITENS.length) : '';
+
+        // Tempo de uso
+        let tempoHTML = '';
+        if (dev) {
+            tempoHTML = `<span class="conf-tempo">&#128338; ${calcTempoUso(ent.dataHora, dev.dataHora)}</span>`;
+        }
+
+        // Preview de itens perdidos no cabeçalho
+        let lostPreview = '';
+        if (a.perdidos.length > 0) {
+            const show = a.perdidos.slice(0, 3);
+            const more = a.perdidos.length - show.length;
+            lostPreview = `<div class="conf-lost-preview">
+                ${show.map(p => `<span class="conf-lost-tag">${p.item}</span>`).join('')}
+                ${more > 0 ? `<span class="conf-lost-more">+${more}</span>` : ''}
+            </div>`;
+        }
+
+        // Responsavel (quem levou o kit)
+        const responsavel = ent.nome2 || 'N/A';
+
+        // Itens detail (corpo expandido)
+        let itensHTML = '';
+        if (dev) {
+            const okItems = a.resultado.filter(r => r.status === 'ok');
+            const lostItems = a.resultado.filter(r => r.status === 'perdeu');
+            const bothMissing = a.resultado.filter(r => r.status === 'faltava-ambos');
+            const recovered = a.resultado.filter(r => r.status === 'recuperou');
+
+            itensHTML = `<div class="conf-itens-grid">
+                <div class="conf-itens-title">&#128203; Comparacao item a item (${ITENS.length} itens) - ${okItems.length} OK, ${lostItems.length} perdido${lostItems.length !== 1 ? 's' : ''}${recovered.length ? ', ' + recovered.length + ' recuperado' + (recovered.length !== 1 ? 's' : '') : ''}</div>
+                ${lostItems.map(r => `<div class="conf-item-row lost"><span class="item-ico">&#10060;</span><span class="item-name">${r.item}</span><span style="font-size:11px;color:var(--red);font-weight:600">SAIU OK &rarr; VOLTOU FALTANDO</span></div>`).join('')}
+                ${recovered.map(r => `<div class="conf-item-row" style="background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2)"><span class="item-ico" style="color:var(--cyan)">&#128260;</span><span class="item-name" style="color:var(--cyan)">${r.item}</span><span style="font-size:11px;color:var(--cyan)">FALTAVA &rarr; RECUPERADO</span></div>`).join('')}
+                ${bothMissing.map(r => `<div class="conf-item-row" style="background:rgba(255,255,255,0.03)"><span class="item-ico" style="color:var(--text2)">&#9898;</span><span class="item-name" style="color:var(--text2)">${r.item}</span><span style="font-size:11px;color:var(--text2)">Faltou na entrega e na devolucao</span></div>`).join('')}
+                ${okItems.map(r => `<div class="conf-item-row ok"><span class="item-ico">&#9989;</span><span class="item-name">${r.item}</span></div>`).join('')}
+            </div>`;
+        } else {
+            const okItems = a.resultado.filter(r => r.status === 'em-uso');
+            const missingItems = a.resultado.filter(r => r.status === 'faltava-ent');
+            itensHTML = `<div class="conf-itens-grid">
+                <div class="conf-itens-title">&#128203; Itens na entrega (aguardando devolucao) - ${okItems.length} OK, ${missingItems.length} faltando</div>
+                ${missingItems.map(r => `<div class="conf-item-row missing-ent"><span class="item-ico">&#9888;</span><span class="item-name">${r.item}</span><span style="font-size:11px;color:var(--yellow);font-weight:600">SAIU FALTANDO</span></div>`).join('')}
+                ${okItems.map(r => `<div class="conf-item-row ok"><span class="item-ico">&#9989;</span><span class="item-name">${r.item}</span></div>`).join('')}
+            </div>`;
+        }
+
+        // Fotos
+        let fotosHTML = '';
+        const entFoto = ent.fotoUrl?.trim();
+        const devFoto = dev?.fotoUrl?.trim();
+        if (entFoto || devFoto) {
+            fotosHTML = `<div class="conf-fotos">
+                <div class="conf-foto-box">
+                    <div class="conf-foto-label" style="color:var(--green)">&#128247; Foto da Entrega</div>
+                    ${entFoto ? `<img src="${entFoto}" alt="Foto entrega" onclick="window.open('${entFoto}','_blank')" title="Clique para ampliar">` : '<div class="conf-foto-empty">Sem foto</div>'}
+                </div>
+                <div class="conf-foto-box">
+                    <div class="conf-foto-label" style="color:var(--cyan)">&#128247; Foto da Devolucao</div>
+                    ${devFoto ? `<img src="${devFoto}" alt="Foto devolucao" onclick="window.open('${devFoto}','_blank')" title="Clique para ampliar">` : '<div class="conf-foto-empty">Sem foto</div>'}
+                </div>
+            </div>`;
+        }
+
+        // Observacoes em destaque
+        let obsHTML = '';
+        if ((ent.observacao?.trim()) || (dev?.observacao?.trim())) {
+            obsHTML = '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">';
+            if (ent.observacao?.trim()) {
+                obsHTML += `<div style="padding:8px 12px;border-radius:8px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);margin-bottom:6px;font-size:12px"><span style="font-weight:700;color:var(--green)">Obs. Entrega:</span> ${ent.observacao}</div>`;
+            }
+            if (dev?.observacao?.trim()) {
+                obsHTML += `<div style="padding:8px 12px;border-radius:8px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.15);font-size:12px"><span style="font-weight:700;color:var(--cyan)">Obs. Devolucao:</span> ${dev.observacao}</div>`;
+            }
+            obsHTML += '</div>';
+        }
+
+        const entConfCount = ent.itensConferidos ? ent.itensConferidos.split(',').filter(i => i.trim()).length : 0;
+        const entFaltCount = ent.itensFaltando?.trim() ? ent.itensFaltando.split(',').filter(i => i.trim()).length : 0;
+
+        return `<div class="conf-ciclo${a.status === 'perdeu' ? ' open' : ''}" id="conf-${idx}" style="${a.status === 'perdeu' ? 'border-color:rgba(239,68,68,0.35)' : ''}">
+            <div class="conf-ciclo-head" onclick="toggleConf(${idx})">
+                <div class="conf-ciclo-head-left" style="gap:14px">
+                    ${healthRing}
+                    <div>
+                        <div class="conf-ciclo-kit">${kitLabel}</div>
+                        <div class="conf-ciclo-kit-sub">
+                            &#128100; ${responsavel} &middot; ${ent.dataHora}${dev ? ' &rarr; ' + dev.dataHora : ''}
+                            ${tempoHTML ? ' &middot; ' + tempoHTML : ''}
+                        </div>
+                        ${lostPreview}
+                    </div>
+                </div>
+                <div class="conf-ciclo-head-right">
+                    <div class="conf-resultado ${statusClass}">${statusLabel}</div>
+                    <span class="conf-arrow">&#9660;</span>
+                </div>
+            </div>
+            <div class="conf-ciclo-body">
+                <div class="conf-compare">
+                    <div class="conf-side">
+                        <div class="conf-side-title"><span class="badge b-ent">SAIDA</span> Entrega</div>
+                        <div class="conf-side-row"><span class="lbl">Entregue por</span><span>${ent.nome1}</span></div>
+                        <div class="conf-side-row"><span class="lbl">Retirado por</span><span>${ent.nome2}</span></div>
+                        <div class="conf-side-row"><span class="lbl">Data</span><span>${ent.dataHora}</span></div>
+                        <div class="conf-side-row"><span class="lbl">Tipo</span><span>${ent.tipoKit}</span></div>
+                        ${ent.portSrt ? `<div class="conf-side-row"><span class="lbl">Port SRT</span><span style="color:var(--cyan);font-weight:600">${ent.portSrt}</span></div>` : ''}
+                        <div class="conf-side-row"><span class="lbl">Itens OK</span><span style="color:var(--green)">${entConfCount}/${ITENS.length}</span></div>
+                        <div class="conf-side-row"><span class="lbl">Faltando</span><span style="color:${entFaltCount ? 'var(--red)' : 'var(--green)'}">${entFaltCount}</span></div>
+                    </div>
+                    <div class="conf-middle">&rarr;</div>
+                    <div class="conf-side" style="${!dev ? 'opacity:0.5;border-style:dashed' : ''}">
+                        <div class="conf-side-title"><span class="badge ${dev ? 'b-dev' : 'b-uso'}">${dev ? 'RETORNO' : 'PENDENTE'}</span> Devolucao</div>
+                        ${dev ? (() => {
+                            const devConfCount = dev.itensConferidos ? dev.itensConferidos.split(',').filter(i => i.trim()).length : 0;
+                            const devFaltCount = dev.itensFaltando?.trim() ? dev.itensFaltando.split(',').filter(i => i.trim()).length : 0;
+                            return `
+                            <div class="conf-side-row"><span class="lbl">Devolvido por</span><span>${dev.nome1}</span></div>
+                            <div class="conf-side-row"><span class="lbl">Recebido por</span><span>${dev.nome2}</span></div>
+                            <div class="conf-side-row"><span class="lbl">Data</span><span>${dev.dataHora}</span></div>
+                            <div class="conf-side-row"><span class="lbl">Tipo</span><span>${dev.tipoKit}</span></div>
+                            <div class="conf-side-row"><span class="lbl">Itens OK</span><span style="color:var(--green)">${devConfCount}/${ITENS.length}</span></div>
+                            <div class="conf-side-row"><span class="lbl">Faltando</span><span style="color:${devFaltCount ? 'var(--red)' : 'var(--green)'}">${devFaltCount}</span></div>`;
+                        })() : `
+                            <div style="text-align:center;padding:20px;color:var(--yellow)">
+                                <div style="font-size:32px;margin-bottom:8px">&#9200;</div>
+                                <div style="font-size:13px;font-weight:600">Kit com <strong>${ent.nome2}</strong></div>
+                                <div style="font-size:12px;margin-top:4px">Ha ${tempoDesde(ent.dataHora)}</div>
+                            </div>
+                        `}
+                    </div>
+                </div>
+                ${itensHTML}
+                ${fotosHTML}
+                ${obsHTML}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleConf(idx) {
+    document.getElementById('conf-' + idx).classList.toggle('open');
+}
+
+// ===== HISTORICO =====
+function renderHist() {
+    const q = (document.getElementById('hSearch')?.value || '').toLowerCase();
+    const tf = document.getElementById('hTipo')?.value || 'all';
+    let f = filtered;
+    if (tf !== 'all') f = f.filter(r => r.tipo === tf);
+    if (q) f = f.filter(r => [r.nome1, r.nome2, r.itensConferidos, r.itensFaltando, r.observacao, r.dataHora].some(s => (s || '').toLowerCase().includes(q)));
+
+    const tp = Math.max(1, Math.ceil(f.length / PER_PAGE));
+    if (pagina > tp) pagina = 1;
+    const pg = f.slice((pagina - 1) * PER_PAGE, pagina * PER_PAGE);
+
+    const tb = document.getElementById('tbHist');
+    if (!pg.length) { tb.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--text2)">Nenhum registro</td></tr>'; }
+    else {
+        tb.innerHTML = pg.map(r => {
+            const falt = r.itensFaltando?.trim();
+            const conf = r.itensConferidos ? r.itensConferidos.split(',').filter(i => i.trim()).length : 0;
+            return `<tr>
+                <td>${r.dataHora || '-'}</td>
+                <td><span class="badge ${r.tipo === 'ENTREGA' ? 'b-ent' : 'b-dev'}">${r.tipo}</span></td>
+                <td>${r.nome1 || '-'}</td><td>${r.nome2 || '-'}</td>
+                <td>${r.tipoKit || '-'}</td><td>${r.iphone || '-'}</td><td>${r.android || '-'}</td>
+                <td style="color:var(--cyan);font-weight:600">${r.portSrt || '-'}</td>
+                <td>${conf}/${ITENS.length}</td>
+                <td style="max-width:180px;white-space:normal;font-size:12px;color:${falt ? 'var(--red)' : 'var(--text2)'}">${falt || 'Nenhum'}</td>
+                <td style="max-width:130px;white-space:normal;font-size:12px">${r.observacao || '-'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    const pd = document.getElementById('histPag');
+    if (tp <= 1) { pd.innerHTML = ''; return; }
+    let h = `<button class="pg" onclick="goPg(${pagina - 1})" ${pagina === 1 ? 'disabled' : ''}>&laquo;</button>`;
+    for (let i = 1; i <= tp; i++) {
+        if (tp > 7 && i > 3 && i < tp - 2 && Math.abs(i - pagina) > 1) { if (i === 4 || i === tp - 3) h += '<span style="color:var(--text2);padding:0 3px">...</span>'; continue; }
+        h += `<button class="pg ${i === pagina ? 'on' : ''}" onclick="goPg(${i})">${i}</button>`;
+    }
+    h += `<button class="pg" onclick="goPg(${pagina + 1})" ${pagina === tp ? 'disabled' : ''}>&raquo;</button>`;
+    pd.innerHTML = h;
+}
+
+function goPg(p) { pagina = p; renderHist(); }
+
+// ===== TIMELINE =====
+function renderTL() {
+    const box = document.getElementById('tlBox');
+    const tf = document.getElementById('tlTipo')?.value || 'all';
+    let f = filtered;
+    if (tf !== 'all') f = f.filter(r => r.tipo === tf);
+    const items = f.slice(0, 30);
+
+    if (!items.length) { box.innerHTML = '<div class="empty"><span class="ico">&#128337;</span><h3>Nenhum evento</h3></div>'; return; }
+
+    box.innerHTML = items.map(r => {
+        const isE = r.tipo === 'ENTREGA';
+        const conf = r.itensConferidos ? r.itensConferidos.split(',').filter(i => i.trim()).length : 0;
+        const falt = r.itensFaltando?.trim();
+        return `<div class="tl-item">
+            <div class="tl-dot ${isE ? 'ent' : 'dev'}"></div>
+            <div class="tl-date">${r.dataHora || '-'}</div>
+            <div class="tl-box">
+                <h4><span class="badge ${isE ? 'b-ent' : 'b-dev'}">${r.tipo}</span> ${r.tipoKit} - ${r.iphone} / ${r.android}</h4>
+                <p>${isE ? r.nome1 + ' entregou para ' + r.nome2 : r.nome1 + ' devolveu para ' + r.nome2}</p>
+                <p>Itens: ${conf}/${ITENS.length}${falt ? ' | <span style="color:var(--red)">Faltando: ' + falt + '</span>' : ''}</p>
+                ${r.observacao ? '<p style="margin-top:3px;font-style:italic">Obs: ' + r.observacao + '</p>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ===== EXPORTAR CSV =====
+function exportCSV() {
+    if (!filtered.length) return;
+    const h = ['Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo Kit', 'iPhone', 'Android', 'Port SRT', 'Itens Conferidos', 'Itens Faltando', 'Observação'];
+    const rows = filtered.map(r => [r.dataHora, r.tipo, r.nome1, r.nome2, r.tipoKit, r.iphone, r.android, r.portSrt || '', '"' + (r.itensConferidos || '') + '"', '"' + (r.itensFaltando || '') + '"', '"' + (r.observacao || '') + '"']);
+    const csv = '\uFEFF' + [h.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.download = 'kitmojo-' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+}
+
+// ===== DADOS DEMO (6 KITS REAIS) =====
+function demo() {
+    const nomes = ['Rafael', 'Lucas', 'Ana', 'Carlos', 'Mariana', 'Pedro', 'Julia', 'Thiago', 'Fernanda', 'Bruno'];
+
+    // Definir os 6 kits fixos
+    const kitsConfig = [
+        { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Motorola' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Samsung' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Motorola' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Samsung' },
+        { tipoKit: 'Alugado', iphone: 'iPhone 15 Pro', android: 'Motorola' },
+        { tipoKit: 'Alugado', iphone: 'iPhone 16', android: 'Samsung' },
+    ];
+
+    const d = [];
+    const now = new Date();
+
+    // Para cada kit, gerar historico de entregas/devoluções
+    kitsConfig.forEach((kit, ki) => {
+        const numCiclos = 2 + Math.floor(Math.random() * 3); // 2-4 ciclos
+        let cursor = new Date(now);
+        cursor.setDate(cursor.getDate() - 60 - Math.floor(Math.random() * 30));
+
+        for (let c = 0; c < numCiclos; c++) {
+            // Entrega
+            cursor.setDate(cursor.getDate() + 1 + Math.floor(Math.random() * 5));
+            cursor.setHours(8 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 60));
+
+            // Maioria das entregas sai COMPLETA (cenario real)
+            let confEnt = [...ITENS], faltEnt = [];
+            if (Math.random() > 0.85) { // 15% chance de ja sair faltando
+                const n = 1;
+                faltEnt.push(confEnt.splice(Math.floor(Math.random() * confEnt.length), 1)[0]);
+            }
+
+            const n1 = nomes[Math.floor(Math.random() * nomes.length)];
+            let n2 = nomes[Math.floor(Math.random() * nomes.length)];
+            while (n2 === n1) n2 = nomes[Math.floor(Math.random() * nomes.length)];
+
+            d.push({
+                tipo: 'ENTREGA',
+                nome1: n1, nome2: n2,
+                tipoKit: kit.tipoKit, iphone: kit.iphone, android: kit.android,
+                itensConferidos: confEnt.join(', '),
+                itensFaltando: faltEnt.join(', '),
+                observacao: Math.random() > 0.85 ? 'Kit em bom estado' : '',
+                dataHora: new Date(cursor).toLocaleString('pt-BR')
+            });
+
+            // Devolução (exceto o ultimo ciclo de alguns kits - deixar "em uso")
+            const isLastCycle = c === numCiclos - 1;
+            const keepInUse = isLastCycle && ki < 3; // 3 primeiros kits ficam em uso
+
+            if (!keepInUse) {
+                cursor.setDate(cursor.getDate() + 1 + Math.floor(Math.random() * 7));
+                cursor.setHours(14 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 60));
+
+                // Na devolução: 40% chance de voltar faltando algo (cenario real de perda)
+                // Pega os itens que SAIRAM OK e aleatoriamente "perde" alguns
+                let confDev = [...ITENS], faltDev = [];
+
+                // Itens que ja faltavam na entrega continuam faltando
+                faltEnt.forEach(item => {
+                    const idx = confDev.indexOf(item);
+                    if (idx !== -1) { confDev.splice(idx, 1); faltDev.push(item); }
+                });
+
+                // Chance de perder itens adicionais (voltou faltando)
+                if (Math.random() > 0.6) {
+                    const nPerdeu = 1 + Math.floor(Math.random() * 3);
+                    for (let j = 0; j < nPerdeu && confDev.length > 10; j++) {
+                        const idx = Math.floor(Math.random() * confDev.length);
+                        faltDev.push(confDev.splice(idx, 1)[0]);
+                    }
+                }
+
+                d.push({
+                    tipo: 'DEVOLUÇÃO',
+                    nome1: n2, nome2: n1,
+                    tipoKit: kit.tipoKit, iphone: kit.iphone, android: kit.android,
+                    itensConferidos: confDev.join(', '),
+                    itensFaltando: faltDev.join(', '),
+                    observacao: faltDev.length > faltEnt.length ? 'Itens faltando na devolução' : '',
+                    dataHora: new Date(cursor).toLocaleString('pt-BR')
+                });
+            }
+        }
+    });
+
+    return d;
+}
+
+// ===== INIT =====
+load();
+</script>
+</body>
+</html>
