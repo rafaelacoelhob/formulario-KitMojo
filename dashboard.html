@@ -917,15 +917,21 @@
                 <thead><tr>
                     <th>Data/Hora</th><th>Tipo</th><th>Responsavel</th>
                     <th>Destinatario</th><th>Kit</th><th>iPhone</th>
-                    <th>Android</th><th>Port SRT</th><th>Itens</th>
+                    <th>Android</th><th>Port SRT</th><th>Chip</th><th>Itens</th>
                 </tr></thead>
                 <tbody id="tbRecent"></tbody>
             </table>
         </div>
     </div>
 
+    <!-- Grafico mensal: uso por mes (LiveMode vs Alugado) -->
+    <div class="card" style="margin-top:24px;margin-bottom:24px">
+        <div class="card-title">&#128197; Uso Mensal do KitMojo (LiveMode vs Alugado)</div>
+        <div class="chart-box" style="height:320px"><canvas id="chMensal"></canvas></div>
+    </div>
+
     <!-- Graficos abaixo -->
-    <div class="grid2" style="margin-top:24px">
+    <div class="grid2">
         <div class="card">
             <div class="card-title">&#128200; Movimentacao por Dia</div>
             <div class="chart-box"><canvas id="chMov"></canvas></div>
@@ -1044,7 +1050,7 @@
             <table>
                 <thead><tr>
                     <th>Data/Hora</th><th>Tipo</th><th>Nome 1</th><th>Nome 2</th>
-                    <th>Tipo Kit</th><th>iPhone</th><th>Android</th><th>Port SRT</th>
+                    <th>Tipo Kit</th><th>iPhone</th><th>Android</th><th>Port SRT</th><th>Chip</th>
                     <th>Itens OK</th><th>Itens Faltando</th><th>Obs</th>
                 </tr></thead>
                 <tbody id="tbHist"></tbody>
@@ -1073,7 +1079,7 @@
 
 <script>
 // ===== CONFIG =====
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNSDPOQc0Ev7DH3dP4OV_h7u05OEsIXrDziORDf19KV6lFRHwt6lfCkUPRK3r1X2kR9w/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzA678q9a6Xmbm66NUfT7WtFA2DsxRLmH8BDqzOCfFBI4LKWwQv20YXcx6nue-gt6rNmg/exec';
 
 const TOTAL_KITS = 6;
 
@@ -1146,7 +1152,7 @@ function calcKitStatus() {
             kits[key] = {
                 key, st: 'uso',
                 tipo: r.tipoKit, iphone: r.iphone, android: r.android,
-                portSrt: r.portSrt || '',
+                portSrt: r.portSrt || '', tipoChip: r.tipoChip || '',
                 comQuem: r.nome2, entregaPor: r.nome1,
                 dtEntrega: r.dataHora,
                 conf: r.itensConferidos, falt: r.itensFaltando,
@@ -1174,7 +1180,7 @@ const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export
 const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
 
 // Colunas esperadas do Sheets:
-// Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
+// Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Tipo Chip | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
 
 function parseCSV(csv) {
     const linhas = [];
@@ -1220,7 +1226,7 @@ function parseCSV(csv) {
 
 function sheetRowToRegistro(row) {
     // Mapeia colunas do Sheets para objeto do dashboard
-    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
+    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Tipo Chip | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
     return {
         dataHora:        (row[0] || '').trim(),
         tipo:            (row[1] || '').trim().toUpperCase(),
@@ -1230,10 +1236,11 @@ function sheetRowToRegistro(row) {
         iphone:          (row[5] || '').trim(),
         android:         (row[6] || '').trim(),
         portSrt:         (row[7] || '').trim(),
-        itensConferidos: (row[8] || '').trim(),
-        itensFaltando:   (row[9] || '').trim(),
-        observacao:      (row[10] || '').trim(),
-        fotoUrl:         (row[11] || '').trim()
+        tipoChip:        (row[8] || '').trim(),
+        itensConferidos: (row[9] || '').trim(),
+        itensFaltando:   (row[10] || '').trim(),
+        observacao:      (row[11] || '').trim(),
+        fotoUrl:         (row[12] || '').trim()
     };
 }
 
@@ -1490,10 +1497,11 @@ function renderOverview() {
                     </div>
                 </div>
 
-                ${kit.portSrt ? `<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);margin-bottom:14px;font-size:13px">
-                    <span style="font-size:15px">&#128268;</span>
+                ${kit.portSrt || kit.tipoChip ? `<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);margin-bottom:14px;font-size:13px;flex-wrap:wrap">
+                    ${kit.portSrt ? `<span style="font-size:15px">&#128268;</span>
                     <span style="color:var(--text2)">Port SRT</span>
-                    <strong style="color:var(--cyan);margin-left:auto">${kit.portSrt}</strong>
+                    <strong style="color:var(--cyan)">${kit.portSrt}</strong>` : ''}
+                    ${kit.tipoChip ? `<span style="margin-left:${kit.portSrt ? 'auto' : '0'};padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;${kit.tipoChip === 'eSIM' ? 'background:rgba(168,85,247,0.15);color:var(--purple)' : 'background:rgba(245,158,11,0.15);color:var(--yellow)'}">${kit.tipoChip === 'eSIM' ? '&#128225; eSIM' : '&#128179; Fisico'}</span>` : ''}
                 </div>` : ''}
 
                 <div class="ov-kit-info">
@@ -1611,6 +1619,50 @@ function renderCharts() {
         options: chartOpts()
     });
 
+    // Grafico Mensal: uso por mes (LiveMode vs Alugado)
+    kill('mensal');
+    const mm = {};
+    // Contar apenas entregas (cada entrega = 1 uso do kit)
+    filtered.filter(r => r.tipo === 'ENTREGA').forEach(r => {
+        const dt = pDate(r.dataHora);
+        const mesKey = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+        const mesLabel = String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear();
+        if (!mm[mesKey]) mm[mesKey] = { label: mesLabel, livemode: 0, alugado: 0 };
+        if ((r.tipoKit || '').toLowerCase() === 'alugado') mm[mesKey].alugado++;
+        else mm[mesKey].livemode++;
+    });
+    const mesKeys = Object.keys(mm).sort();
+    if (mesKeys.length > 0) {
+        charts.mensal = new Chart(document.getElementById('chMensal'), {
+            type: 'bar',
+            data: {
+                labels: mesKeys.map(k => mm[k].label),
+                datasets: [
+                    { label: 'LiveMode', data: mesKeys.map(k => mm[k].livemode), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 4 },
+                    { label: 'Alugado', data: mesKeys.map(k => mm[k].alugado), backgroundColor: 'rgba(168,85,247,0.7)', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#8b8fa3', padding: 16 } },
+                    tooltip: {
+                        callbacks: {
+                            footer: function(items) {
+                                const total = items.reduce((s, i) => s + i.raw, 0);
+                                return 'Total: ' + total + ' uso(s)';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#8b8fa3' }, grid: { color: 'rgba(255,255,255,0.05)' }, stacked: true },
+                    y: { ticks: { color: '#8b8fa3', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, stacked: true, beginAtZero: true }
+                }
+            }
+        });
+    }
+
     // Pizza
     kill('pie');
     const ne = filtered.filter(r => r.tipo === 'ENTREGA').length;
@@ -1640,16 +1692,18 @@ function chartOpts() {
 function renderRecent() {
     const tb = document.getElementById('tbRecent');
     const recs = filtered.slice(0, 8);
-    if (!recs.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text2)">Nenhum registro</td></tr>'; return; }
+    if (!recs.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--text2)">Nenhum registro</td></tr>'; return; }
     tb.innerHTML = recs.map(r => {
         const conf = r.itensConferidos ? r.itensConferidos.split(',').filter(i => i.trim()).length : 0;
         const ok = !r.itensFaltando?.trim();
+        const chipBadge = r.tipoChip === 'eSIM' ? '<span class="badge" style="background:rgba(168,85,247,0.12);color:var(--purple)">eSIM</span>' : r.tipoChip ? '<span class="badge" style="background:rgba(245,158,11,0.12);color:var(--yellow)">Fisico</span>' : '-';
         return `<tr>
             <td>${r.dataHora || '-'}</td>
             <td><span class="badge ${r.tipo === 'ENTREGA' ? 'b-ent' : 'b-dev'}">${r.tipo}</span></td>
             <td>${r.nome1 || '-'}</td><td>${r.nome2 || '-'}</td>
             <td>${r.tipoKit || '-'}</td><td>${r.iphone || '-'}</td><td>${r.android || '-'}</td>
             <td style="color:var(--cyan);font-weight:600">${r.portSrt || '-'}</td>
+            <td>${chipBadge}</td>
             <td><span class="badge ${ok ? 'b-ok' : 'b-nok'}">${ok ? 'Completo' : ITENS.length - conf + ' faltando'}</span></td>
         </tr>`;
     }).join('');
@@ -2170,17 +2224,19 @@ function renderHist() {
     const pg = f.slice((pagina - 1) * PER_PAGE, pagina * PER_PAGE);
 
     const tb = document.getElementById('tbHist');
-    if (!pg.length) { tb.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--text2)">Nenhum registro</td></tr>'; }
+    if (!pg.length) { tb.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--text2)">Nenhum registro</td></tr>'; }
     else {
         tb.innerHTML = pg.map(r => {
             const falt = r.itensFaltando?.trim();
             const conf = r.itensConferidos ? r.itensConferidos.split(',').filter(i => i.trim()).length : 0;
+            const chipBadge = r.tipoChip === 'eSIM' ? '<span class="badge" style="background:rgba(168,85,247,0.12);color:var(--purple)">eSIM</span>' : r.tipoChip ? '<span class="badge" style="background:rgba(245,158,11,0.12);color:var(--yellow)">Fisico</span>' : '-';
             return `<tr>
                 <td>${r.dataHora || '-'}</td>
                 <td><span class="badge ${r.tipo === 'ENTREGA' ? 'b-ent' : 'b-dev'}">${r.tipo}</span></td>
                 <td>${r.nome1 || '-'}</td><td>${r.nome2 || '-'}</td>
                 <td>${r.tipoKit || '-'}</td><td>${r.iphone || '-'}</td><td>${r.android || '-'}</td>
                 <td style="color:var(--cyan);font-weight:600">${r.portSrt || '-'}</td>
+                <td>${chipBadge}</td>
                 <td>${conf}/${ITENS.length}</td>
                 <td style="max-width:180px;white-space:normal;font-size:12px;color:${falt ? 'var(--red)' : 'var(--text2)'}">${falt || 'Nenhum'}</td>
                 <td style="max-width:130px;white-space:normal;font-size:12px">${r.observacao || '-'}</td>
@@ -2231,8 +2287,8 @@ function renderTL() {
 // ===== EXPORTAR CSV =====
 function exportCSV() {
     if (!filtered.length) return;
-    const h = ['Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo Kit', 'iPhone', 'Android', 'Port SRT', 'Itens Conferidos', 'Itens Faltando', 'Observação'];
-    const rows = filtered.map(r => [r.dataHora, r.tipo, r.nome1, r.nome2, r.tipoKit, r.iphone, r.android, r.portSrt || '', '"' + (r.itensConferidos || '') + '"', '"' + (r.itensFaltando || '') + '"', '"' + (r.observacao || '') + '"']);
+    const h = ['Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo Kit', 'iPhone', 'Android', 'Port SRT', 'Tipo Chip', 'Itens Conferidos', 'Itens Faltando', 'Observação'];
+    const rows = filtered.map(r => [r.dataHora, r.tipo, r.nome1, r.nome2, r.tipoKit, r.iphone, r.android, r.portSrt || '', r.tipoChip || '', '"' + (r.itensConferidos || '') + '"', '"' + (r.itensFaltando || '') + '"', '"' + (r.observacao || '') + '"']);
     const csv = '\uFEFF' + [h.join(';'), ...rows.map(r => r.join(';'))].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -2246,12 +2302,12 @@ function demo() {
 
     // Definir os 6 kits fixos
     const kitsConfig = [
-        { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Motorola' },
-        { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Samsung' },
-        { tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Motorola' },
-        { tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Samsung' },
-        { tipoKit: 'Alugado', iphone: 'iPhone 15 Pro', android: 'Motorola' },
-        { tipoKit: 'Alugado', iphone: 'iPhone 16', android: 'Samsung' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Motorola', tipoChip: 'Fisico' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Samsung', tipoChip: 'eSIM' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Motorola', tipoChip: 'Fisico' },
+        { tipoKit: 'LiveMode', iphone: 'iPhone 16', android: 'Samsung', tipoChip: 'eSIM' },
+        { tipoKit: 'Alugado', iphone: 'iPhone 15 Pro', android: 'Motorola', tipoChip: 'Fisico' },
+        { tipoKit: 'Alugado', iphone: 'iPhone 16', android: 'Samsung', tipoChip: 'eSIM' },
     ];
 
     const d = [];
@@ -2283,6 +2339,7 @@ function demo() {
                 tipo: 'ENTREGA',
                 nome1: n1, nome2: n2,
                 tipoKit: kit.tipoKit, iphone: kit.iphone, android: kit.android,
+                tipoChip: kit.tipoChip,
                 itensConferidos: confEnt.join(', '),
                 itensFaltando: faltEnt.join(', '),
                 observacao: Math.random() > 0.85 ? 'Kit em bom estado' : '',
@@ -2320,6 +2377,7 @@ function demo() {
                     tipo: 'DEVOLUÇÃO',
                     nome1: n2, nome2: n1,
                     tipoKit: kit.tipoKit, iphone: kit.iphone, android: kit.android,
+                    tipoChip: kit.tipoChip,
                     itensConferidos: confDev.join(', '),
                     itensFaltando: faltDev.join(', '),
                     observacao: faltDev.length > faltEnt.length ? 'Itens faltando na devolução' : '',

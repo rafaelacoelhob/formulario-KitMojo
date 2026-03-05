@@ -1,8 +1,8 @@
 // ===== CODIGO ATUALIZADO DO GOOGLE APPS SCRIPT =====
-// Inclui "Port SRT" entre "Modelo Android" e "Itens Conferidos"
+// Inclui "Port SRT" e "Tipo Chip" entre "Modelo Android" e "Itens Conferidos"
 //
 // IMPORTANTE: Apos colar, faca NOVA IMPLANTACAO
-// Na planilha, adicione a coluna "Port SRT" entre "Modelo Android" e "Itens Conferidos"
+// Na planilha, adicione a coluna "Tipo Chip" entre "Port SRT" e "Itens Conferidos"
 
 function doPost(e) {
   try {
@@ -14,10 +14,10 @@ function doPost(e) {
       sheet = ss.insertSheet('KitMojo');
       sheet.appendRow([
         'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
-        'Modelo iPhone', 'Modelo Android', 'Port SRT',
+        'Modelo iPhone', 'Modelo Android', 'Port SRT', 'Tipo Chip',
         'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)'
       ]);
-      var headerRange = sheet.getRange(1, 1, 1, 12);
+      var headerRange = sheet.getRange(1, 1, 1, 13);
       headerRange.setFontWeight('bold');
       headerRange.setBackground('#1a1a2e');
       headerRange.setFontColor('#ffffff');
@@ -48,6 +48,7 @@ function doPost(e) {
       dados.iphone || '',
       dados.android || '',
       dados.portSrt || '',
+      dados.tipoChip || '',
       dados.itensConferidos || '',
       dados.itensFaltando || '',
       dados.observacao || '',
@@ -71,7 +72,7 @@ function testeManual() {
     postData: {
       contents: JSON.stringify({
         tipo: 'ENTREGA', nome1: 'Teste', nome2: 'Teste2',
-        tipoKit: 'LiveMode', portSrt: '9000',
+        tipoKit: 'LiveMode', portSrt: '9000', tipoChip: 'Fisico',
         iphone: 'iPhone 16', android: 'Samsung',
         itensConferidos: 'SmartRig Completo', itensFaltando: 'Espuma',
         observacao: 'Teste', foto: '',

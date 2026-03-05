@@ -550,6 +550,21 @@
                 <input type="text" id="entrega-portSrt" placeholder="Ex: 9000" required>
             </div>
 
+            <!-- Tipo de Chip -->
+            <div class="iphone-section">
+                <label>Tipo de Chip <span class="obrigatorio">*</span></label>
+                <div class="iphone-options">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'entrega', 'chip')">
+                        <input type="radio" name="entrega-chip" value="Fisico" required>
+                        <span>Fisico</span>
+                    </label>
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'entrega', 'chip')">
+                        <input type="radio" name="entrega-chip" value="eSIM">
+                        <span>eSIM</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="separator"></div>
 
             <!-- Celular iPhone -->
@@ -648,6 +663,21 @@
                     <option value="LiveMode">LiveMode</option>
                     <option value="Alugado">Alugado</option>
                 </select>
+            </div>
+
+            <!-- Tipo de Chip -->
+            <div class="iphone-section">
+                <label>Tipo de Chip <span class="obrigatorio">*</span></label>
+                <div class="iphone-options">
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'devolucao', 'chip')">
+                        <input type="radio" name="devolucao-chip" value="Fisico" required>
+                        <span>Fisico</span>
+                    </label>
+                    <label class="iphone-option" onclick="selecionarRadio(this, 'devolucao', 'chip')">
+                        <input type="radio" name="devolucao-chip" value="eSIM">
+                        <span>eSIM</span>
+                    </label>
+                </div>
             </div>
 
             <div class="separator"></div>
@@ -752,7 +782,7 @@
 
 <script>
     // ===== URL DO GOOGLE APPS SCRIPT (NOVA IMPLANTAÇÃO) =====
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNSDPOQc0Ev7DH3dP4OV_h7u05OEsIXrDziORDf19KV6lFRHwt6lfCkUPRK3r1X2kR9w/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzA678q9a6Xmbm66NUfT7WtFA2DsxRLmH8BDqzOCfFBI4LKWwQv20YXcx6nue-gt6rNmg/exec';
 
     // Lista de itens do checklist
     const itensKit = [
@@ -946,18 +976,20 @@
             const nome2 = document.getElementById('entrega-quemRetirou').value.trim();
             const tipo = document.getElementById('entrega-tipoKit').value;
             const portSrt = document.getElementById('entrega-portSrt').value.trim();
+            const chip = document.querySelector('input[name="entrega-chip"]:checked');
             const iphone = document.querySelector('input[name="entrega-iphone"]:checked');
             const android = document.querySelector('input[name="entrega-android"]:checked');
             const checks = document.querySelectorAll('#checklist-entrega input:checked').length;
-            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && portSrt && iphone && android && checks > 0 && fotos.entrega);
+            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && portSrt && chip && iphone && android && checks > 0 && fotos.entrega);
         } else {
             const nome1 = document.getElementById('devolucao-quemEstava').value.trim();
             const nome2 = document.getElementById('devolucao-quemPegou').value.trim();
             const tipo = document.getElementById('devolucao-tipoKit').value;
+            const chip = document.querySelector('input[name="devolucao-chip"]:checked');
             const iphone = document.querySelector('input[name="devolucao-iphone"]:checked');
             const android = document.querySelector('input[name="devolucao-android"]:checked');
             const checks = document.querySelectorAll('#checklist-devolucao input:checked').length;
-            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && tipo && iphone && android && checks > 0 && fotos.devolucao);
+            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && tipo && chip && iphone && android && checks > 0 && fotos.devolucao);
         }
     }
 
@@ -1004,6 +1036,7 @@
                 nome2: document.getElementById('entrega-quemRetirou').value.trim(),
                 tipoKit: document.getElementById('entrega-tipoKit').value,
                 portSrt: document.getElementById('entrega-portSrt').value.trim(),
+                tipoChip: document.querySelector('input[name="entrega-chip"]:checked').value,
                 iphone: document.querySelector('input[name="entrega-iphone"]:checked').value,
                 android: document.querySelector('input[name="entrega-android"]:checked').value,
                 itensConferidos: checkedItems.join(', '),
@@ -1021,6 +1054,7 @@
                 nome1: document.getElementById('devolucao-quemEstava').value.trim(),
                 nome2: document.getElementById('devolucao-quemPegou').value.trim(),
                 tipoKit: document.getElementById('devolucao-tipoKit').value,
+                tipoChip: document.querySelector('input[name="devolucao-chip"]:checked').value,
                 iphone: document.querySelector('input[name="devolucao-iphone"]:checked').value,
                 android: document.querySelector('input[name="devolucao-android"]:checked').value,
                 itensConferidos: checkedItems.join(', '),
