@@ -617,16 +617,19 @@
                 <div class="camera-area" id="cameraArea-entrega">
                     <div class="camera-placeholder" id="placeholder-entrega">
                         <span class="icon">&#128247;</span>
-                        Tire uma foto do KitMojo
+                        Tire uma foto ou importe da galeria
                     </div>
                     <video id="video-entrega" autoplay playsinline></video>
                     <canvas id="canvas-entrega"></canvas>
                     <div class="photo-preview" id="preview-entrega">
                         <img id="img-entrega" src="" alt="Foto do KitMojo">
                     </div>
+                    <input type="file" id="fileInput-entrega" accept="image/*" style="display:none" onchange="importarFoto(event, 'entrega')">
                     <div>
-                        <button type="button" class="btn-camera btn-abrir" onclick="abrirCamera('entrega')">&#128247; Abrir Câmera</button>
+                        <button type="button" class="btn-camera btn-abrir" onclick="abrirCamera('entrega')">&#128247; Abrir Camera</button>
+                        <button type="button" class="btn-camera btn-abrir" onclick="document.getElementById('fileInput-entrega').click()">&#128193; Importar Foto</button>
                         <button type="button" class="btn-camera btn-tirar" id="btnTirar-entrega" onclick="tirarFoto('entrega')">&#128248; Tirar Foto</button>
+                        <button type="button" class="btn-camera btn-tirar" id="btnVirar-entrega" onclick="virarCamera('entrega')" style="display:none">&#128260; Virar Camera</button>
                         <button type="button" class="btn-camera btn-nova" id="btnNova-entrega" onclick="novaFoto('entrega')">&#128260; Nova Foto</button>
                     </div>
                 </div>
@@ -732,16 +735,19 @@
                 <div class="camera-area" id="cameraArea-devolucao">
                     <div class="camera-placeholder" id="placeholder-devolucao">
                         <span class="icon">&#128247;</span>
-                        Tire uma foto do KitMojo
+                        Tire uma foto ou importe da galeria
                     </div>
                     <video id="video-devolucao" autoplay playsinline></video>
                     <canvas id="canvas-devolucao"></canvas>
                     <div class="photo-preview" id="preview-devolucao">
                         <img id="img-devolucao" src="" alt="Foto do KitMojo">
                     </div>
+                    <input type="file" id="fileInput-devolucao" accept="image/*" style="display:none" onchange="importarFoto(event, 'devolucao')">
                     <div>
-                        <button type="button" class="btn-camera btn-abrir" onclick="abrirCamera('devolucao')">&#128247; Abrir Câmera</button>
+                        <button type="button" class="btn-camera btn-abrir" onclick="abrirCamera('devolucao')">&#128247; Abrir Camera</button>
+                        <button type="button" class="btn-camera btn-abrir" onclick="document.getElementById('fileInput-devolucao').click()">&#128193; Importar Foto</button>
                         <button type="button" class="btn-camera btn-tirar" id="btnTirar-devolucao" onclick="tirarFoto('devolucao')">&#128248; Tirar Foto</button>
+                        <button type="button" class="btn-camera btn-tirar" id="btnVirar-devolucao" onclick="virarCamera('devolucao')" style="display:none">&#128260; Virar Camera</button>
                         <button type="button" class="btn-camera btn-nova" id="btnNova-devolucao" onclick="novaFoto('devolucao')">&#128260; Nova Foto</button>
                     </div>
                 </div>
@@ -908,11 +914,12 @@
     // Câmera por aba
     const streams = { entrega: null, devolucao: null };
     const fotos = { entrega: false, devolucao: false };
+    const cameraFacing = { entrega: 'environment', devolucao: 'environment' };
 
     async function abrirCamera(tab) {
         try {
             const s = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                video: { facingMode: cameraFacing[tab], width: { ideal: 1280 }, height: { ideal: 720 } }
             });
             streams[tab] = s;
             const video = document.getElementById('video-' + tab);
@@ -920,12 +927,42 @@
             video.style.display = 'block';
             document.getElementById('placeholder-' + tab).style.display = 'none';
             const area = document.getElementById('cameraArea-' + tab);
-            area.querySelector('.btn-abrir').style.display = 'none';
+            area.querySelectorAll('.btn-abrir').forEach(b => b.style.display = 'none');
             document.getElementById('btnTirar-' + tab).style.display = 'inline-flex';
+            document.getElementById('btnVirar-' + tab).style.display = 'inline-flex';
             area.classList.add('active');
         } catch (err) {
             alert('Erro ao acessar a câmera. Verifique as permissões do navegador.');
         }
+    }
+
+    async function virarCamera(tab) {
+        pararCamera(tab);
+        cameraFacing[tab] = cameraFacing[tab] === 'environment' ? 'user' : 'environment';
+        await abrirCamera(tab);
+    }
+
+    function importarFoto(event, tab) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('img-' + tab).src = e.target.result;
+            document.getElementById('preview-' + tab).style.display = 'block';
+            pararCamera(tab);
+            document.getElementById('video-' + tab).style.display = 'none';
+            document.getElementById('placeholder-' + tab).style.display = 'none';
+            document.getElementById('btnTirar-' + tab).style.display = 'none';
+            document.getElementById('btnVirar-' + tab).style.display = 'none';
+            document.getElementById('btnNova-' + tab).style.display = 'inline-flex';
+            const area = document.getElementById('cameraArea-' + tab);
+            area.querySelectorAll('.btn-abrir').forEach(b => b.style.display = 'none');
+            area.classList.remove('active');
+            area.classList.add('has-photo');
+            fotos[tab] = true;
+            validarFormulario(tab);
+        };
+        reader.readAsDataURL(file);
     }
 
     function tirarFoto(tab) {
@@ -942,6 +979,7 @@
         pararCamera(tab);
         video.style.display = 'none';
         document.getElementById('btnTirar-' + tab).style.display = 'none';
+        document.getElementById('btnVirar-' + tab).style.display = 'none';
         document.getElementById('btnNova-' + tab).style.display = 'inline-flex';
 
         const area = document.getElementById('cameraArea-' + tab);
@@ -956,10 +994,14 @@
         document.getElementById('preview-' + tab).style.display = 'none';
         document.getElementById('img-' + tab).src = '';
         document.getElementById('btnNova-' + tab).style.display = 'none';
+        document.getElementById('fileInput-' + tab).value = '';
         document.getElementById('cameraArea-' + tab).classList.remove('has-photo');
         fotos[tab] = false;
         validarFormulario(tab);
-        abrirCamera(tab);
+        // Mostrar botões iniciais para escolher camera ou importar
+        document.getElementById('placeholder-' + tab).style.display = 'block';
+        const area = document.getElementById('cameraArea-' + tab);
+        area.querySelectorAll('.btn-abrir').forEach(b => b.style.display = 'inline-flex');
     }
 
     function pararCamera(tab) {
@@ -1155,8 +1197,10 @@
             document.getElementById('img-' + tab).src = '';
             document.getElementById('btnNova-' + tab).style.display = 'none';
             document.getElementById('btnTirar-' + tab).style.display = 'none';
+            document.getElementById('btnVirar-' + tab).style.display = 'none';
+            document.getElementById('fileInput-' + tab).value = '';
             const area = document.getElementById('cameraArea-' + tab);
-            area.querySelector('.btn-abrir').style.display = 'inline-flex';
+            area.querySelectorAll('.btn-abrir').forEach(b => b.style.display = 'inline-flex');
             area.classList.remove('has-photo', 'active');
             document.getElementById('placeholder-' + tab).style.display = 'block';
             fotos[tab] = false;
