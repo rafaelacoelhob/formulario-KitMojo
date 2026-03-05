@@ -911,6 +911,22 @@
         <div id="ovAlertList"></div>
     </div>
 
+    <!-- Solicitacoes pendentes no overview -->
+    <div class="tbl-card" id="ovSolCard" style="display:none;margin-bottom:24px">
+        <div class="tbl-head">
+            <h3>Solicitacoes Pendentes</h3>
+            <span id="ovSolCount" style="font-size:12px;color:var(--yellow);font-weight:700"></span>
+        </div>
+        <div class="tbl-wrap">
+            <table>
+                <thead><tr>
+                    <th>Quando</th><th>Onde</th><th>Quem</th><th>Projeto</th><th>Solicitado em</th>
+                </tr></thead>
+                <tbody id="tbSolRecent"></tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Ultimas atividades resumida -->
     <div class="tbl-card">
         <div class="tbl-head"><h3>Ultimas Movimentacoes</h3></div>
@@ -2429,6 +2445,22 @@ function demo() {
 const SOL_SHEET_ID = '1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0';
 let solicitacoes = [];
 
+// Formatar data ISO ou string para pt-BR legivel
+function fmtData(str) {
+    if (!str) return '-';
+    str = String(str).trim();
+    // Ja esta em formato pt-BR (dd/mm/yyyy)
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) return str;
+    // ISO format (2026-03-05T17:43:06.000Z)
+    try {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        }
+    } catch(e) {}
+    return str;
+}
+
 async function loadSolicitacoes() {
     try {
         // Tentar via Apps Script GET
@@ -2526,16 +2558,43 @@ function renderSolicitacoes() {
             : '<span class="badge b-ok">Atendida</span>';
         return `<tr>
             <td style="font-weight:600;font-size:12px">${s.id || '-'}</td>
-            <td>${s.dataSolicitacao || '-'}</td>
-            <td style="font-weight:600">${s.quando || '-'}</td>
+            <td>${fmtData(s.dataSolicitacao)}</td>
+            <td style="font-weight:600">${fmtData(s.quando)}</td>
             <td>${s.onde || '-'}</td>
             <td>${s.quem || '-'}</td>
             <td>${s.projeto || '-'}</td>
             <td style="max-width:150px;white-space:normal;font-size:12px">${s.observacao || '-'}</td>
             <td>${statusBadge}</td>
-            <td>${s.dataAtendimento || '-'}</td>
+            <td>${fmtData(s.dataAtendimento)}</td>
         </tr>`;
     }).join('');
+
+    // Renderizar solicitacoes pendentes na Visao Geral
+    renderSolOverview();
+}
+
+// ===== SOLICITACOES NA VISAO GERAL =====
+function renderSolOverview() {
+    const pendentes = solicitacoes.filter(s => s.status === 'Pendente');
+    const card = document.getElementById('ovSolCard');
+    const tb = document.getElementById('tbSolRecent');
+    const count = document.getElementById('ovSolCount');
+
+    if (!pendentes.length) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = 'block';
+    count.textContent = pendentes.length + ' pendente' + (pendentes.length > 1 ? 's' : '');
+
+    tb.innerHTML = pendentes.map(s => `<tr>
+        <td style="font-weight:600">${fmtData(s.quando)}</td>
+        <td>${s.onde || '-'}</td>
+        <td>${s.quem || '-'}</td>
+        <td>${s.projeto || '-'}</td>
+        <td style="font-size:12px;color:var(--text2)">${fmtData(s.dataSolicitacao)}</td>
+    </tr>`).join('');
 }
 
 // ===== INIT =====
