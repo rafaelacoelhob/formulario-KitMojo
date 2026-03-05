@@ -314,7 +314,7 @@
         .empty h3 { font-size: 17px; color: var(--text); margin-bottom: 6px; }
         .empty p { font-size: 14px; max-width: 380px; margin: 0 auto; }
 
-        /* ===== OVERVIEW - PAINEL DOS 6 KITS ===== */
+        /* ===== OVERVIEW - PAINEL DOS KITS ===== */
         .ov-summary {
             display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;
         }
@@ -900,7 +900,7 @@
     <!-- Resumo visual: rings -->
     <div class="ov-summary" id="ovSummary"></div>
 
-    <!-- Grid dos 6 kits -->
+    <!-- Grid dos kits -->
     <div class="ov-grid" id="ovGrid"></div>
 
     <!-- Alertas -->
@@ -1081,7 +1081,7 @@
 // ===== CONFIG =====
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzA678q9a6Xmbm66NUfT7WtFA2DsxRLmH8BDqzOCfFBI4LKWwQv20YXcx6nue-gt6rNmg/exec';
 
-const TOTAL_KITS = 6;
+// TOTAL_KITS é calculado dinamicamente com base nos kits registrados
 
 const ITENS = [
     'SmartRig Completo','Conjunto Microfone DJI (Sem Fio)','Microfone de Mão com Fio',
@@ -1407,11 +1407,12 @@ function renderAll() {
     renderHist(); renderTL();
 }
 
-// ===== OVERVIEW - PAINEL DOS 6 KITS =====
+// ===== OVERVIEW - PAINEL DOS KITS =====
 function renderOverview() {
     const kitList = calcKitStatus();
+    const totalKits = kitList.length;
     const emUso = kitList.filter(k => k.st === 'uso').length;
-    const disp = TOTAL_KITS - emUso;
+    const disp = kitList.filter(k => k.st === 'disp').length;
     const comFalta = kitList.filter(k => k.st === 'uso' && k.falt?.trim()).length;
     const totalMov = filtered.length;
 
@@ -1419,27 +1420,27 @@ function renderOverview() {
     document.getElementById('ovSummary').innerHTML = `
         <div class="ov-stat">
             <div class="ov-stat-ring">
-                ${buildRingSVG(disp, TOTAL_KITS, 'var(--green)')}
+                ${buildRingSVG(disp, totalKits || 1, 'var(--green)')}
                 <div class="ring-text" style="color:var(--green)">${disp}</div>
             </div>
             <div class="ov-stat-info">
                 <div class="ov-stat-label">Disponiveis</div>
-                <div class="ov-stat-val">${disp} de ${TOTAL_KITS}</div>
+                <div class="ov-stat-val">${disp} de ${totalKits}</div>
             </div>
         </div>
         <div class="ov-stat">
             <div class="ov-stat-ring">
-                ${buildRingSVG(emUso, TOTAL_KITS, 'var(--yellow)')}
+                ${buildRingSVG(emUso, totalKits || 1, 'var(--yellow)')}
                 <div class="ring-text" style="color:var(--yellow)">${emUso}</div>
             </div>
             <div class="ov-stat-info">
                 <div class="ov-stat-label">Em Uso</div>
-                <div class="ov-stat-val">${emUso} de ${TOTAL_KITS}</div>
+                <div class="ov-stat-val">${emUso} de ${totalKits}</div>
             </div>
         </div>
         <div class="ov-stat">
             <div class="ov-stat-ring">
-                ${buildRingSVG(comFalta, TOTAL_KITS, 'var(--red)')}
+                ${buildRingSVG(comFalta, totalKits || 1, 'var(--red)')}
                 <div class="ring-text" style="color:var(--red)">${comFalta}</div>
             </div>
             <div class="ov-stat-info">
@@ -2296,11 +2297,11 @@ function exportCSV() {
     a.click();
 }
 
-// ===== DADOS DEMO (6 KITS REAIS) =====
+// ===== DADOS DEMO =====
 function demo() {
     const nomes = ['Rafael', 'Lucas', 'Ana', 'Carlos', 'Mariana', 'Pedro', 'Julia', 'Thiago', 'Fernanda', 'Bruno'];
 
-    // Definir os 6 kits fixos
+    // Kits de exemplo para demo
     const kitsConfig = [
         { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Motorola', tipoChip: 'Fisico' },
         { tipoKit: 'LiveMode', iphone: 'iPhone 15 Pro', android: 'Samsung', tipoChip: 'eSIM' },
