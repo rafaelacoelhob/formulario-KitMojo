@@ -813,6 +813,12 @@
         if (!str) return '';
         str = String(str).trim();
         if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) return str;
+        // Formato gviz: Date(2026,2,5,16,32,23)
+        const gvizMatch = str.match(/^Date\((\d+),(\d+),(\d+)/);
+        if (gvizMatch) {
+            const d = new Date(parseInt(gvizMatch[1]), parseInt(gvizMatch[2]), parseInt(gvizMatch[3]));
+            return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        }
         try {
             const d = new Date(str);
             if (!isNaN(d.getTime())) {
