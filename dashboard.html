@@ -857,6 +857,7 @@
         <button class="nav-btn" data-sec="kits"><span class="ico"></span> Status dos Kits</button>
         <button class="nav-btn" data-sec="conferencia"><span class="ico"></span> Conferencia</button>
         <button class="nav-btn" data-sec="faltando"><span class="ico"></span> Itens Faltando</button>
+        <button class="nav-btn" data-sec="solicitacoes"><span class="ico"></span> Solicitacoes</button>
         <button class="nav-btn" data-sec="historico"><span class="ico"></span> Historico</button>
         <button class="nav-btn" data-sec="timeline"><span class="ico"></span> Linha do Tempo</button>
     </div>
@@ -874,6 +875,7 @@
         <button data-sec="kits">Kits</button>
         <button data-sec="conferencia">Conferir</button>
         <button data-sec="faltando">Faltando</button>
+        <button data-sec="solicitacoes">Solicit.</button>
         <button data-sec="historico">Historico</button>
         <button data-sec="timeline">Timeline</button>
     </div>
@@ -1026,6 +1028,38 @@
             <table>
                 <thead><tr><th>Data</th><th>Tipo</th><th>Responsavel</th><th>Itens Faltando</th><th>Qtd</th></tr></thead>
                 <tbody id="tbFalta"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ========== SOLICITACOES ========== -->
+<section class="sec" id="sec-solicitacoes">
+    <div class="page-head">
+        <h2>Solicitacoes de KitMojo</h2>
+        <div class="head-actions">
+            <select class="sel" id="solFiltro" onchange="renderSolicitacoes()">
+                <option value="all">Todas</option>
+                <option value="Pendente">Pendentes</option>
+                <option value="Atendida">Atendidas</option>
+            </select>
+            <button class="btn-sm" onclick="loadSolicitacoes()">Atualizar</button>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row" id="solKpis"></div>
+
+    <!-- Tabela -->
+    <div class="tbl-card">
+        <div class="tbl-head"><h3>Lista de Solicitacoes</h3></div>
+        <div class="tbl-wrap">
+            <table>
+                <thead><tr>
+                    <th>ID</th><th>Data Solicitacao</th><th>Quando</th><th>Onde</th>
+                    <th>Quem</th><th>Projeto</th><th>Obs</th><th>Status</th><th>Data Atendimento</th>
+                </tr></thead>
+                <tbody id="tbSol"></tbody>
             </table>
         </div>
     </div>
@@ -2391,8 +2425,122 @@ function demo() {
     return d;
 }
 
+// ===== SOLICITACOES =====
+const SOL_SHEET_ID = '1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0';
+let solicitacoes = [];
+
+async function loadSolicitacoes() {
+    try {
+        // Tentar via Apps Script GET
+        const resp = await fetch(SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (Array.isArray(data)) {
+                solicitacoes = data;
+                renderSolicitacoes();
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('[KitMojo] Erro ao carregar solicitacoes via API:', e);
+    }
+
+    // Fallback: tentar via gviz da aba Solicitacoes
+    try {
+        const ss = await new Promise((resolve, reject) => {
+            const cbName = '_solCallback_' + Date.now();
+            const timeout = setTimeout(() => { delete window[cbName]; script.remove(); reject('Timeout'); }, 10000);
+            window[cbName] = function(response) {
+                clearTimeout(timeout); delete window[cbName]; script.remove(); resolve(response);
+            };
+            // Precisamos descobrir o gid da aba Solicitacoes - tentar gid=0 primeiro
+            // Na pratica, o gid da aba Solicitacoes sera diferente. Usar sheet name via query.
+            const url = `https://docs.google.com/spreadsheets/d/${SOL_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&sheet=Solicitacoes`;
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = () => { clearTimeout(timeout); delete window[cbName]; script.remove(); reject('Error'); };
+            document.head.appendChild(script);
+        });
+
+        if (ss && ss.table && ss.table.rows) {
+            solicitacoes = ss.table.rows.map(row => {
+                const v = (row.c || []).map(c => c ? (c.f || (c.v !== null && c.v !== undefined ? String(c.v) : '')) : '');
+                return {
+                    id: (v[0] || '').trim(),
+                    dataSolicitacao: (v[1] || '').trim(),
+                    quando: (v[2] || '').trim(),
+                    onde: (v[3] || '').trim(),
+                    quem: (v[4] || '').trim(),
+                    projeto: (v[5] || '').trim(),
+                    observacao: (v[6] || '').trim(),
+                    status: (v[7] || '').trim(),
+                    dataAtendimento: (v[8] || '').trim()
+                };
+            }).filter(s => s.id);
+            renderSolicitacoes();
+        }
+    } catch (e) {
+        console.warn('[KitMojo] Erro ao carregar solicitacoes via gviz:', e);
+    }
+}
+
+function renderSolicitacoes() {
+    const filtro = document.getElementById('solFiltro')?.value || 'all';
+    let lista = [...solicitacoes];
+    if (filtro !== 'all') lista = lista.filter(s => s.status === filtro);
+
+    const total = solicitacoes.length;
+    const pendentes = solicitacoes.filter(s => s.status === 'Pendente').length;
+    const atendidas = solicitacoes.filter(s => s.status === 'Atendida').length;
+
+    // KPIs
+    document.getElementById('solKpis').innerHTML = `
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-label">Total</span><div class="kpi-ico" style="background:var(--blue-bg);color:var(--blue)">S</div></div>
+            <div class="kpi-val">${total}</div>
+            <div class="kpi-sub">solicitacoes</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-ico" style="background:var(--yellow-bg);color:var(--yellow)">P</div></div>
+            <div class="kpi-val" style="color:var(--yellow)">${pendentes}</div>
+            <div class="kpi-sub">aguardando atendimento</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-label">Atendidas</span><div class="kpi-ico" style="background:var(--green-bg);color:var(--green)">A</div></div>
+            <div class="kpi-val" style="color:var(--green)">${atendidas}</div>
+            <div class="kpi-sub">concluidas</div>
+        </div>
+    `;
+
+    // Tabela
+    const tb = document.getElementById('tbSol');
+    if (!lista.length) {
+        tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text2)">Nenhuma solicitacao encontrada</td></tr>';
+        return;
+    }
+
+    tb.innerHTML = lista.map(s => {
+        const isPendente = s.status === 'Pendente';
+        const statusBadge = isPendente
+            ? '<span class="badge b-uso">Pendente</span>'
+            : '<span class="badge b-ok">Atendida</span>';
+        return `<tr>
+            <td style="font-weight:600;font-size:12px">${s.id || '-'}</td>
+            <td>${s.dataSolicitacao || '-'}</td>
+            <td style="font-weight:600">${s.quando || '-'}</td>
+            <td>${s.onde || '-'}</td>
+            <td>${s.quem || '-'}</td>
+            <td>${s.projeto || '-'}</td>
+            <td style="max-width:150px;white-space:normal;font-size:12px">${s.observacao || '-'}</td>
+            <td>${statusBadge}</td>
+            <td>${s.dataAtendimento || '-'}</td>
+        </tr>`;
+    }).join('');
+}
+
 // ===== INIT =====
 load();
+loadSolicitacoes();
 </script>
 </body>
 </html>

@@ -526,6 +526,15 @@
     <!-- ==================== ABA ENTREGA ==================== -->
     <div class="tab-content active" id="tab-entrega">
         <form id="formEntrega" onsubmit="enviarForm(event, 'entrega')">
+            <!-- Vincular a solicitacao -->
+            <div class="form-group">
+                <label for="entrega-solicitacao">Vincular a uma solicitacao</label>
+                <select id="entrega-solicitacao" onchange="preencherSolicitacao()">
+                    <option value="">Nenhuma (entrega sem solicitacao)</option>
+                </select>
+                <div id="solicitacao-info" style="display:none;margin-top:8px;padding:10px 14px;border-radius:8px;background:#f0f2f5;font-size:13px;color:#555;border:1px solid #e0e0e0"></div>
+            </div>
+
             <div class="form-group">
                 <label for="entrega-quemEntregou">Nome de quem entregou <span class="obrigatorio">*</span></label>
                 <input type="text" id="entrega-quemEntregou" placeholder="Digite o nome de quem entregou o kit" required>
@@ -789,6 +798,48 @@
 <script>
     // ===== URL DO GOOGLE APPS SCRIPT (NOVA IMPLANTAÇÃO) =====
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzA678q9a6Xmbm66NUfT7WtFA2DsxRLmH8BDqzOCfFBI4LKWwQv20YXcx6nue-gt6rNmg/exec';
+
+    // ===== SOLICITACOES PENDENTES =====
+    let solicitacoesPendentes = [];
+
+    async function carregarSolicitacoes() {
+        try {
+            const resp = await fetch(GOOGLE_SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
+            if (resp.ok) {
+                const todas = await resp.json();
+                solicitacoesPendentes = Array.isArray(todas) ? todas.filter(s => s.status === 'Pendente') : [];
+            }
+        } catch (e) {
+            console.warn('Erro ao carregar solicitacoes:', e);
+            solicitacoesPendentes = [];
+        }
+        const sel = document.getElementById('entrega-solicitacao');
+        sel.innerHTML = '<option value="">Nenhuma (entrega sem solicitacao)</option>';
+        solicitacoesPendentes.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.quem + ' - ' + s.projeto + ' - ' + s.quando + ' (' + s.onde + ')';
+            sel.appendChild(opt);
+        });
+    }
+
+    function preencherSolicitacao() {
+        const sel = document.getElementById('entrega-solicitacao');
+        const info = document.getElementById('solicitacao-info');
+        const sol = solicitacoesPendentes.find(s => s.id === sel.value);
+        if (sol) {
+            info.style.display = 'block';
+            info.innerHTML = '<strong>Quando:</strong> ' + sol.quando +
+                ' | <strong>Onde:</strong> ' + sol.onde +
+                ' | <strong>Quem:</strong> ' + sol.quem +
+                ' | <strong>Projeto:</strong> ' + sol.projeto +
+                (sol.observacao ? ' | <strong>Obs:</strong> ' + sol.observacao : '');
+        } else {
+            info.style.display = 'none';
+        }
+    }
+
+    carregarSolicitacoes();
 
     // Lista de itens do checklist
     const itensKit = [
@@ -1085,7 +1136,8 @@
                 itensFaltando: itensKit.filter(i => !checkedItems.includes(i)).join(', '),
                 observacao: document.getElementById('entrega-observacao').value.trim(),
                 foto: document.getElementById('img-entrega').src,
-                dataHora: new Date().toLocaleString('pt-BR')
+                dataHora: new Date().toLocaleString('pt-BR'),
+                solicitacaoId: document.getElementById('entrega-solicitacao').value || ''
             };
             document.getElementById('sucessoTitulo').textContent = 'Entrega Registrada!';
             document.getElementById('sucessoMsg').textContent = 'A entrega do KitMojo foi registrada com sucesso.';

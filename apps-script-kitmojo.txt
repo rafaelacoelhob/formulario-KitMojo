@@ -1,66 +1,196 @@
 // ===== CODIGO ATUALIZADO DO GOOGLE APPS SCRIPT =====
-// Inclui "Port SRT" e "Tipo Chip" entre "Modelo Android" e "Itens Conferidos"
+// Suporta: Entrega/Devolucao (aba KitMojo) e Solicitacoes (aba Solicitacoes)
 //
 // IMPORTANTE: Apos colar, faca NOVA IMPLANTACAO
-// Na planilha, adicione a coluna "Tipo Chip" entre "Port SRT" e "Itens Conferidos"
+// Na planilha, as abas serao criadas automaticamente se nao existirem
 
 function doPost(e) {
   try {
     var dados = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.openById('1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0');
-    var sheet = ss.getSheetByName('KitMojo');
 
-    if (!sheet) {
-      sheet = ss.insertSheet('KitMojo');
-      sheet.appendRow([
-        'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
-        'Modelo iPhone', 'Modelo Android', 'Port SRT', 'Tipo Chip',
-        'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)'
-      ]);
-      var headerRange = sheet.getRange(1, 1, 1, 13);
-      headerRange.setFontWeight('bold');
-      headerRange.setBackground('#1a1a2e');
-      headerRange.setFontColor('#ffffff');
+    // === SOLICITACAO ===
+    if (dados.acao === 'SOLICITACAO') {
+      return handleSolicitacao(ss, dados);
     }
 
-    var fotoUrl = '';
-    if (dados.foto && dados.foto.indexOf('data:') === 0) {
-      try {
-        var folder = DriveApp.getFolderById('1PIcLHBuoPjDH77atG2pcHN2Ws3gxzujV');
-        var base64Data = dados.foto.split(',')[1];
-        var decoded = Utilities.base64Decode(base64Data);
-        var nomeArquivo = 'KitMojo_' + dados.tipo + '_' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyyMMdd_HHmmss') + '.jpg';
-        var blob = Utilities.newBlob(decoded, 'image/jpeg', nomeArquivo);
-        var file = folder.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        fotoUrl = file.getUrl();
-      } catch (fotoErr) {
-        fotoUrl = 'ERRO_FOTO: ' + fotoErr.toString();
-      }
+    // === ATENDER SOLICITACAO (marcar como atendida) ===
+    if (dados.acao === 'ATENDER_SOLICITACAO') {
+      return handleAtenderSolicitacao(ss, dados);
     }
 
-    sheet.appendRow([
-      dados.dataHora || new Date().toLocaleString('pt-BR'),
-      dados.tipo || '',
-      dados.nome1 || '',
-      dados.nome2 || '',
-      dados.tipoKit || '',
-      dados.iphone || '',
-      dados.android || '',
-      dados.portSrt || '',
-      dados.tipoChip || '',
-      dados.itensConferidos || '',
-      dados.itensFaltando || '',
-      dados.observacao || '',
-      fotoUrl
-    ]);
-
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'ok', fotoUrl: fotoUrl }))
-      .setMimeType(ContentService.MimeType.JSON);
+    // === ENTREGA / DEVOLUCAO ===
+    return handleKitMojo(ss, dados);
 
   } catch (err) {
     Logger.log('ERRO: ' + err.toString());
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// === HANDLER: ENTREGA / DEVOLUCAO ===
+function handleKitMojo(ss, dados) {
+  var sheet = ss.getSheetByName('KitMojo');
+
+  if (!sheet) {
+    sheet = ss.insertSheet('KitMojo');
+    sheet.appendRow([
+      'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
+      'Modelo iPhone', 'Modelo Android', 'Port SRT', 'Tipo Chip',
+      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)'
+    ]);
+    var headerRange = sheet.getRange(1, 1, 1, 13);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#1a1a2e');
+    headerRange.setFontColor('#ffffff');
+  }
+
+  var fotoUrl = '';
+  if (dados.foto && dados.foto.indexOf('data:') === 0) {
+    try {
+      var folder = DriveApp.getFolderById('1PIcLHBuoPjDH77atG2pcHN2Ws3gxzujV');
+      var base64Data = dados.foto.split(',')[1];
+      var decoded = Utilities.base64Decode(base64Data);
+      var nomeArquivo = 'KitMojo_' + dados.tipo + '_' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyyMMdd_HHmmss') + '.jpg';
+      var blob = Utilities.newBlob(decoded, 'image/jpeg', nomeArquivo);
+      var file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fotoUrl = file.getUrl();
+    } catch (fotoErr) {
+      fotoUrl = 'ERRO_FOTO: ' + fotoErr.toString();
+    }
+  }
+
+  sheet.appendRow([
+    dados.dataHora || new Date().toLocaleString('pt-BR'),
+    dados.tipo || '',
+    dados.nome1 || '',
+    dados.nome2 || '',
+    dados.tipoKit || '',
+    dados.iphone || '',
+    dados.android || '',
+    dados.portSrt || '',
+    dados.tipoChip || '',
+    dados.itensConferidos || '',
+    dados.itensFaltando || '',
+    dados.observacao || '',
+    fotoUrl
+  ]);
+
+  // Se for entrega e tiver solicitacaoId, marcar como atendida
+  if (dados.tipo === 'ENTREGA' && dados.solicitacaoId) {
+    try {
+      marcarSolicitacaoAtendida(ss, dados.solicitacaoId);
+    } catch (e) {
+      Logger.log('Erro ao atender solicitacao: ' + e.toString());
+    }
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok', fotoUrl: fotoUrl }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// === HANDLER: SOLICITACAO ===
+function handleSolicitacao(ss, dados) {
+  var sheet = ss.getSheetByName('Solicitacoes');
+
+  if (!sheet) {
+    sheet = ss.insertSheet('Solicitacoes');
+    sheet.appendRow([
+      'ID', 'Data Solicitacao', 'Quando', 'Onde', 'Quem', 'Projeto',
+      'Observacao', 'Status', 'Data Atendimento'
+    ]);
+    var headerRange = sheet.getRange(1, 1, 1, 9);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#1a1a2e');
+    headerRange.setFontColor('#ffffff');
+  }
+
+  // Gerar ID unico
+  var id = 'SOL-' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyyMMddHHmmss');
+
+  sheet.appendRow([
+    id,
+    dados.dataHora || new Date().toLocaleString('pt-BR'),
+    dados.quando || '',
+    dados.onde || '',
+    dados.quem || '',
+    dados.projeto || '',
+    dados.observacao || '',
+    'Pendente',
+    ''
+  ]);
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok', id: id }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// === HANDLER: ATENDER SOLICITACAO ===
+function handleAtenderSolicitacao(ss, dados) {
+  marcarSolicitacaoAtendida(ss, dados.solicitacaoId);
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// === MARCAR SOLICITACAO COMO ATENDIDA ===
+function marcarSolicitacaoAtendida(ss, solicitacaoId) {
+  var sheet = ss.getSheetByName('Solicitacoes');
+  if (!sheet) return;
+
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === solicitacaoId) {
+      sheet.getRange(i + 1, 8).setValue('Atendida'); // coluna Status
+      sheet.getRange(i + 1, 9).setValue(new Date().toLocaleString('pt-BR')); // coluna Data Atendimento
+      break;
+    }
+  }
+}
+
+// === doGet: retornar solicitacoes pendentes (para o formulario de entrega) ===
+function doGet(e) {
+  try {
+    var ss = SpreadsheetApp.openById('1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0');
+    var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : '';
+
+    if (action === 'solicitacoesPendentes') {
+      var sheet = ss.getSheetByName('Solicitacoes');
+      if (!sheet) {
+        return ContentService
+          .createTextOutput(JSON.stringify([]))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var data = sheet.getDataRange().getValues();
+      var pendentes = [];
+      for (var i = 1; i < data.length; i++) {
+        pendentes.push({
+          id: data[i][0],
+          dataSolicitacao: data[i][1],
+          quando: data[i][2],
+          onde: data[i][3],
+          quem: data[i][4],
+          projeto: data[i][5],
+          observacao: data[i][6],
+          status: data[i][7],
+          dataAtendimento: data[i][8]
+        });
+      }
+      return ContentService
+        .createTextOutput(JSON.stringify(pendentes))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Default: retorna vazio
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'ok' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
     return ContentService
       .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -76,6 +206,23 @@ function testeManual() {
         iphone: 'iPhone 16', android: 'Samsung',
         itensConferidos: 'SmartRig Completo', itensFaltando: 'Espuma',
         observacao: 'Teste', foto: '',
+        dataHora: new Date().toLocaleString('pt-BR')
+      })
+    }
+  });
+  Logger.log(resultado.getContent());
+}
+
+function testeSolicitacao() {
+  var resultado = doPost({
+    postData: {
+      contents: JSON.stringify({
+        acao: 'SOLICITACAO',
+        quando: 'Sabado, 14/03',
+        onde: 'Sao Paulo',
+        quem: 'Alan (Fala, Porco)',
+        projeto: 'Brasileirao',
+        observacao: '',
         dataHora: new Date().toLocaleString('pt-BR')
       })
     }

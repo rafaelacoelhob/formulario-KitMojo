@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar KitMojo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            max-width: 550px;
+            width: 100%;
+            overflow: hidden;
+            height: fit-content;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            padding: 30px 24px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 28px; margin-bottom: 4px; letter-spacing: 1px; }
+        .header p { font-size: 14px; opacity: 0.7; }
+
+        .form-body { padding: 24px; }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #1a73e8;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .obrigatorio { color: #e53935; }
+
+        .btn-enviar {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-enviar:hover { opacity: 0.9; }
+        .btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .sucesso-overlay, .erro-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .sucesso-overlay.show, .erro-overlay.show {
+            display: flex;
+        }
+
+        .sucesso-card, .erro-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .sucesso-card .check {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px; font-weight: 800;
+        }
+
+        .erro-card .icon-erro {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: #ffebee;
+            color: #c62828;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px; font-weight: 800;
+        }
+
+        .sucesso-card h2, .erro-card h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .sucesso-card p, .erro-card p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .sucesso-card button, .erro-card button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .sucesso-card button { background: #2e7d32; }
+        .erro-card button { background: #c62828; }
+
+        .erro-detalhe {
+            background: #fff3f3;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #c62828;
+            max-height: 80px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .envio-status {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+            min-height: 20px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .header { padding: 24px 16px; }
+            .form-body { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Solicitar KitMojo</h1>
+        <p>Preencha os dados para solicitar um kit</p>
+    </div>
+
+    <div class="form-body">
+        <form id="formSolicitacao" onsubmit="enviar(event)">
+            <div class="form-group">
+                <label>Quando <span class="obrigatorio">*</span></label>
+                <input type="text" id="quando" placeholder="Ex: Sabado, 14/03" required>
+            </div>
+
+            <div class="form-group">
+                <label>Onde <span class="obrigatorio">*</span></label>
+                <input type="text" id="onde" placeholder="Ex: Sao Paulo" required>
+            </div>
+
+            <div class="form-group">
+                <label>Quem <span class="obrigatorio">*</span></label>
+                <input type="text" id="quem" placeholder="Ex: Alan (Fala, Porco)" required>
+            </div>
+
+            <div class="form-group">
+                <label>Projeto <span class="obrigatorio">*</span></label>
+                <input type="text" id="projeto" placeholder="Ex: Brasileirao" required>
+            </div>
+
+            <div class="form-group">
+                <label>Observacao</label>
+                <textarea id="observacao" placeholder="Alguma informacao adicional? (opcional)"></textarea>
+            </div>
+
+            <div class="envio-status" id="envioStatus"></div>
+            <button type="submit" class="btn-enviar" id="btnEnviar" disabled>Enviar Solicitacao</button>
+        </form>
+    </div>
+</div>
+
+<!-- Overlay de Sucesso -->
+<div class="sucesso-overlay" id="sucessoOverlay">
+    <div class="sucesso-card">
+        <div class="check">OK</div>
+        <h2>Solicitacao Enviada!</h2>
+        <p>Sua solicitacao foi registrada e a equipe sera notificada.</p>
+        <button onclick="resetar()">Nova Solicitacao</button>
+    </div>
+</div>
+
+<!-- Overlay de Erro -->
+<div class="erro-overlay" id="erroOverlay">
+    <div class="erro-card">
+        <div class="icon-erro">X</div>
+        <h2>Erro ao Enviar</h2>
+        <p>Nao foi possivel registrar a solicitacao.</p>
+        <div class="erro-detalhe" id="erroDetalhe"></div>
+        <button onclick="document.getElementById('erroOverlay').classList.remove('show')">Fechar</button>
+    </div>
+</div>
+
+<script>
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzA678q9a6Xmbm66NUfT7WtFA2DsxRLmH8BDqzOCfFBI4LKWwQv20YXcx6nue-gt6rNmg/exec';
+
+    // Validacao
+    function validar() {
+        const quando = document.getElementById('quando').value.trim();
+        const onde = document.getElementById('onde').value.trim();
+        const quem = document.getElementById('quem').value.trim();
+        const projeto = document.getElementById('projeto').value.trim();
+        document.getElementById('btnEnviar').disabled = !(quando && onde && quem && projeto);
+    }
+
+    ['quando', 'onde', 'quem', 'projeto'].forEach(id => {
+        document.getElementById(id).addEventListener('input', validar);
+    });
+
+    async function enviar(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnEnviar');
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+        document.getElementById('envioStatus').textContent = 'Enviando solicitacao...';
+
+        const dados = {
+            acao: 'SOLICITACAO',
+            quando: document.getElementById('quando').value.trim(),
+            onde: document.getElementById('onde').value.trim(),
+            quem: document.getElementById('quem').value.trim(),
+            projeto: document.getElementById('projeto').value.trim(),
+            observacao: document.getElementById('observacao').value.trim(),
+            dataHora: new Date().toLocaleString('pt-BR')
+        };
+
+        try {
+            // Tentativa 1: fetch normal
+            try {
+                const resp = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(dados),
+                    redirect: 'follow'
+                });
+                if (resp.ok) {
+                    const json = await resp.json();
+                    if (json.status === 'error') throw new Error(json.message);
+                }
+            } catch (fetchErr) {
+                // Tentativa 2: no-cors
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(dados)
+                });
+            }
+
+            document.getElementById('envioStatus').textContent = '';
+            document.getElementById('sucessoOverlay').classList.add('show');
+
+        } catch (err) {
+            document.getElementById('envioStatus').textContent = '';
+            document.getElementById('erroDetalhe').textContent = err.message || err.toString();
+            document.getElementById('erroOverlay').classList.add('show');
+            btn.disabled = false;
+            btn.textContent = 'Enviar Solicitacao';
+        }
+    }
+
+    function resetar() {
+        document.getElementById('sucessoOverlay').classList.remove('show');
+        document.getElementById('formSolicitacao').reset();
+        document.getElementById('btnEnviar').disabled = true;
+        document.getElementById('btnEnviar').textContent = 'Enviar Solicitacao';
+    }
+</script>
+</body>
+</html>
