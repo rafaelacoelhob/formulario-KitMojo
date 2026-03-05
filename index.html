@@ -799,6 +799,20 @@
     // ===== URL DO GOOGLE APPS SCRIPT (NOVA IMPLANTAÇÃO) =====
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzibgccrENThNwhMSFmmyB9NoFbUDVeA_A9R1AUJvfu9qT4xwbppfts4A1FmJygFdBAaw/exec';
 
+    // ===== FORMATAR DATA =====
+    function fmtData(str) {
+        if (!str) return '';
+        str = String(str).trim();
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) return str;
+        try {
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            }
+        } catch(e) {}
+        return str;
+    }
+
     // ===== SOLICITACOES PENDENTES =====
     let solicitacoesPendentes = [];
 
@@ -818,7 +832,7 @@
         solicitacoesPendentes.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.id;
-            opt.textContent = s.quem + ' - ' + s.projeto + ' - ' + s.quando + ' (' + s.onde + ')';
+            opt.textContent = s.quem + ' - ' + s.projeto + ' - ' + fmtData(s.quando) + ' (' + s.onde + ')';
             sel.appendChild(opt);
         });
     }
@@ -829,7 +843,7 @@
         const sol = solicitacoesPendentes.find(s => s.id === sel.value);
         if (sol) {
             info.style.display = 'block';
-            info.innerHTML = '<strong>Quando:</strong> ' + sol.quando +
+            info.innerHTML = '<strong>Quando:</strong> ' + fmtData(sol.quando) +
                 ' | <strong>Onde:</strong> ' + sol.onde +
                 ' | <strong>Quem:</strong> ' + sol.quem +
                 ' | <strong>Projeto:</strong> ' + sol.projeto +
