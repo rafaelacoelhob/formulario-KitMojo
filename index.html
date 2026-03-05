@@ -807,7 +807,7 @@
         try {
             const d = new Date(str);
             if (!isNaN(d.getTime())) {
-                return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
             }
         } catch(e) {}
         return str;
