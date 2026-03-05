@@ -658,6 +658,15 @@
     <!-- ==================== ABA DEVOLUÇÃO ==================== -->
     <div class="tab-content" id="tab-devolucao">
         <form id="formDevolucao" onsubmit="enviarForm(event, 'devolucao')">
+            <!-- Vincular a uma entrega ativa -->
+            <div class="form-group">
+                <label for="devolucao-entrega">Vincular a uma entrega ativa</label>
+                <select id="devolucao-entrega" onchange="preencherEntrega()">
+                    <option value="">Nenhuma (devolucao sem vinculo)</option>
+                </select>
+                <div id="entrega-info" style="display:none;margin-top:8px;padding:10px 14px;border-radius:8px;background:#f0f2f5;font-size:13px;color:#555;border:1px solid #e0e0e0"></div>
+            </div>
+
             <div class="form-group">
                 <label for="devolucao-quemEstava">Nome de quem estava com o kit <span class="obrigatorio">*</span></label>
                 <input type="text" id="devolucao-quemEstava" placeholder="Digite o nome de quem estava com o kit" required>
@@ -854,6 +863,98 @@
     }
 
     carregarSolicitacoes();
+
+    // ===== ENTREGAS ATIVAS (para vincular na devolucao) =====
+    const SHEET_ID = '1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0';
+    const SHEET_GID = '1349869099';
+    let entregasAtivas = [];
+
+    function carregarEntregasViaJSONP() {
+        return new Promise((resolve) => {
+            const cbName = '_kitmojoEntregasCb_' + Date.now();
+            window[cbName] = function(resp) {
+                try {
+                    const rows = resp.table.rows;
+                    const cols = resp.table.cols;
+                    const registros = rows.map(r => {
+                        const vals = r.c.map(c => c ? (c.v != null ? String(c.v) : '') : '');
+                        return {
+                            dataHora: vals[0],
+                            tipo: vals[1],
+                            nome1: vals[2],
+                            nome2: vals[3],
+                            tipoKit: vals[4],
+                            iphone: vals[5],
+                            android: vals[6],
+                            portSrt: vals[7],
+                            tipoChip: vals[8],
+                            itensConferidos: vals[9],
+                            itensFaltando: vals[10],
+                            observacao: vals[11]
+                        };
+                    });
+
+                    // Filtrar entregas e devoluções
+                    const entregas = registros.filter(r => r.tipo === 'ENTREGA');
+                    const devolucoes = registros.filter(r => r.tipo === 'DEVOLUÇÃO');
+
+                    // Uma entrega é ativa se não tem devolução correspondente (mesmo nome2 = quem retirou)
+                    entregasAtivas = entregas.filter(ent => {
+                        return !devolucoes.some(dev => dev.nome1 === ent.nome2 && dev.tipoKit === ent.tipoKit);
+                    });
+
+                    montarDropdownEntregas();
+                } catch(e) {
+                    console.warn('Erro ao parsear entregas:', e);
+                }
+                delete window[cbName];
+                const s = document.getElementById('script_' + cbName);
+                if (s) s.remove();
+                resolve();
+            };
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${SHEET_GID}`;
+            const script = document.createElement('script');
+            script.id = 'script_' + cbName;
+            script.src = url;
+            script.onerror = () => { delete window[cbName]; resolve(); };
+            document.body.appendChild(script);
+        });
+    }
+
+    function montarDropdownEntregas() {
+        const sel = document.getElementById('devolucao-entrega');
+        sel.innerHTML = '<option value="">Nenhuma (devolucao sem vinculo)</option>';
+        entregasAtivas.forEach((ent, idx) => {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            opt.textContent = ent.nome2 + ' - ' + ent.tipoKit + ' - ' + fmtData(ent.dataHora) + (ent.iphone ? ' (' + ent.iphone + ')' : '');
+            sel.appendChild(opt);
+        });
+    }
+
+    function preencherEntrega() {
+        const sel = document.getElementById('devolucao-entrega');
+        const info = document.getElementById('entrega-info');
+        const idx = sel.value;
+        if (idx !== '' && entregasAtivas[idx]) {
+            const ent = entregasAtivas[idx];
+            info.style.display = 'block';
+            info.innerHTML = '<strong>Data:</strong> ' + fmtData(ent.dataHora) +
+                ' | <strong>Quem retirou:</strong> ' + ent.nome2 +
+                ' | <strong>Kit:</strong> ' + ent.tipoKit +
+                ' | <strong>iPhone:</strong> ' + ent.iphone +
+                ' | <strong>Android:</strong> ' + ent.android +
+                (ent.tipoChip ? ' | <strong>Chip:</strong> ' + ent.tipoChip : '') +
+                (ent.portSrt ? ' | <strong>Port SRT:</strong> ' + ent.portSrt : '');
+
+            // Preencher campos automaticamente
+            document.getElementById('devolucao-quemEstava').value = ent.nome2;
+        } else {
+            info.style.display = 'none';
+        }
+    }
+
+    carregarEntregasViaJSONP();
 
     // Lista de itens do checklist
     const itensKit = [
