@@ -2462,41 +2462,31 @@ function fmtData(str) {
 }
 
 async function loadSolicitacoes() {
-    try {
-        // Tentar via Apps Script GET
-        const resp = await fetch(SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
-        if (resp.ok) {
-            const data = await resp.json();
-            if (Array.isArray(data)) {
-                solicitacoes = data;
-                renderSolicitacoes();
-                return;
-            }
-        }
-    } catch (e) {
-        console.warn('[KitMojo] Erro ao carregar solicitacoes via API:', e);
-    }
+    let loaded = false;
 
-    // Fallback: tentar via gviz da aba Solicitacoes
+    // Tentativa 1: gviz/JSONP da aba Solicitacoes (funciona sem CORS)
     try {
         const ss = await new Promise((resolve, reject) => {
             const cbName = '_solCallback_' + Date.now();
-            const timeout = setTimeout(() => { delete window[cbName]; script.remove(); reject('Timeout'); }, 10000);
+            const timeout = setTimeout(() => { delete window[cbName]; scr.remove(); reject('Timeout'); }, 10000);
             window[cbName] = function(response) {
-                clearTimeout(timeout); delete window[cbName]; script.remove(); resolve(response);
+                clearTimeout(timeout); delete window[cbName]; scr.remove(); resolve(response);
             };
-            // Precisamos descobrir o gid da aba Solicitacoes - tentar gid=0 primeiro
-            // Na pratica, o gid da aba Solicitacoes sera diferente. Usar sheet name via query.
             const url = `https://docs.google.com/spreadsheets/d/${SOL_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&sheet=Solicitacoes`;
-            const script = document.createElement('script');
-            script.src = url;
-            script.onerror = () => { clearTimeout(timeout); delete window[cbName]; script.remove(); reject('Error'); };
-            document.head.appendChild(script);
+            const scr = document.createElement('script');
+            scr.src = url;
+            scr.onerror = () => { clearTimeout(timeout); delete window[cbName]; scr.remove(); reject('Error'); };
+            document.head.appendChild(scr);
         });
 
         if (ss && ss.table && ss.table.rows) {
             solicitacoes = ss.table.rows.map(row => {
-                const v = (row.c || []).map(c => c ? (c.f || (c.v !== null && c.v !== undefined ? String(c.v) : '')) : '');
+                const v = (row.c || []).map(c => {
+                    if (!c) return '';
+                    if (c.f) return c.f;
+                    if (c.v !== null && c.v !== undefined) return String(c.v);
+                    return '';
+                });
                 return {
                     id: (v[0] || '').trim(),
                     dataSolicitacao: (v[1] || '').trim(),
@@ -2509,11 +2499,31 @@ async function loadSolicitacoes() {
                     dataAtendimento: (v[8] || '').trim()
                 };
             }).filter(s => s.id);
-            renderSolicitacoes();
+            loaded = solicitacoes.length > 0;
+            console.log('[KitMojo] Solicitacoes via gviz:', solicitacoes.length);
         }
     } catch (e) {
-        console.warn('[KitMojo] Erro ao carregar solicitacoes via gviz:', e);
+        console.warn('[KitMojo] Solicitacoes gviz falhou:', e);
     }
+
+    // Tentativa 2: fetch via Apps Script GET
+    if (!loaded) {
+        try {
+            const resp = await fetch(SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    solicitacoes = data;
+                    loaded = true;
+                    console.log('[KitMojo] Solicitacoes via API:', solicitacoes.length);
+                }
+            }
+        } catch (e) {
+            console.warn('[KitMojo] Solicitacoes API falhou:', e);
+        }
+    }
+
+    renderSolicitacoes();
 }
 
 function renderSolicitacoes() {
