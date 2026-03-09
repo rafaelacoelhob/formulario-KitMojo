@@ -2758,7 +2758,7 @@ function renderSolicitacoes() {
         return `<tr>
             <td style="font-weight:600;font-size:12px">${s.id || '-'}</td>
             <td>${fmtData(s.dataSolicitacao)}</td>
-            <td style="font-weight:600">${fmtData(s.quando)}</td>
+            <td style="font-weight:600">${s.quando || '-'}</td>
             <td>${s.onde || '-'}</td>
             <td>${s.quem || '-'}</td>
             <td>${s.projeto || '-'}</td>
@@ -2788,7 +2788,7 @@ function renderSolOverview() {
     count.textContent = pendentes.length + ' pendente' + (pendentes.length > 1 ? 's' : '');
 
     tb.innerHTML = pendentes.map(s => `<tr>
-        <td style="font-weight:600">${fmtData(s.quando)}</td>
+        <td style="font-weight:600">${s.quando || '-'}</td>
         <td>${s.onde || '-'}</td>
         <td>${s.quem || '-'}</td>
         <td>${s.projeto || '-'}</td>
