@@ -2087,7 +2087,10 @@ function renderKits() {
 
     grid.innerHTML = kits.map((v, i) => {
         const emUso = v.st === 'uso';
-        const conf = v.conf ? v.conf.split(',').filter(x => x.trim()).length : 0;
+        // Usa itens da devolução quando disponível, senão da entrega
+        const itensRef  = emUso ? v.conf    : (v.confDev || v.conf);
+        const faltaRef  = emUso ? v.falt    : (v.faltDev || v.falt);
+        const conf = itensRef ? itensRef.split(',').filter(x => x.trim()).length : 0;
         const pct = Math.round(conf / ITENS.length * 100);
         const cor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
         const foiTransferido = emUso && v.custodia && v.custodia.length > 0;
@@ -2130,7 +2133,7 @@ function renderKits() {
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Data entrega' : 'Data devolucao'}</span><span>${emUso ? v.dtEntrega : (v.dtDevolucao || '-')}</span></div>
             ${emUso ? `<div class="kit-row"><span class="kit-row-l">Tempo fora</span><span style="color:var(--yellow);font-weight:600">${tempoDesde(v.dtEntrega)}</span></div>` : ''}
             ${cadeiaHTML}
-            ${v.falt?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.falt}</span></div>` : ''}
+            ${faltaRef?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${faltaRef}</span></div>` : ''}
             ${v.obs ? `<div class="kit-row"><span class="kit-row-l">Obs</span><span style="font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.obs}</span></div>` : ''}
             <div class="prog">
                 <div class="prog-lbl"><span style="color:var(--text2)">Itens conferidos</span><span>${conf}/${ITENS.length} (${pct}%)</span></div>
