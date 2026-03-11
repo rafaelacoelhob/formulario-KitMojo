@@ -1040,32 +1040,74 @@
         </div>
         <div class="modal-body">
             <div class="edit-msg" id="transferMsg"></div>
-            <div style="margin-bottom:14px">
-                <label class="edit-label">Kit em uso</label>
-                <select class="edit-input" id="tKit" onchange="preencherDeTransfer()">
-                    <option value="">Selecione o kit...</option>
-                </select>
+
+            <!-- Seleção do kit -->
+            <div class="modal-row full">
+                <div class="modal-field">
+                    <label>Kit em uso</label>
+                    <select id="tKit" onchange="preencherDeTransfer()">
+                        <option value="">Selecione o kit que será transferido...</option>
+                    </select>
+                </div>
             </div>
-            <div style="margin-bottom:14px">
-                <label class="edit-label">De (quem está com o kit)</label>
-                <input class="edit-input" type="text" id="tDe" readonly placeholder="Preenchido automaticamente">
+
+            <!-- Info do kit selecionado -->
+            <div id="tKitInfo" style="display:none;background:var(--bg-hover);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+                <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600">Kit selecionado</div>
+                <div style="display:flex;gap:24px;flex-wrap:wrap">
+                    <div>
+                        <div style="font-size:11px;color:var(--text2)">Tipo</div>
+                        <div style="font-size:13px;font-weight:600" id="tInfoTipo">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--text2)">iPhone</div>
+                        <div style="font-size:13px;font-weight:600" id="tInfoIphone">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--text2)">Android</div>
+                        <div style="font-size:13px;font-weight:600" id="tInfoAndroid">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--text2)">Com quem</div>
+                        <div style="font-size:13px;font-weight:600;color:var(--yellow)" id="tInfoComQuem">—</div>
+                    </div>
+                </div>
             </div>
-            <div style="margin-bottom:14px">
-                <label class="edit-label">Para – Nome 1 *</label>
-                <input class="edit-input" type="text" id="tParaNome1" placeholder="Nome de quem vai receber">
+
+            <!-- De → Para -->
+            <div style="background:var(--bg-hover);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+                <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;font-weight:600">Movimento</div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    <div style="flex:1;min-width:150px">
+                        <div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700">De</div>
+                        <input type="text" id="tDe" readonly placeholder="Selecione o kit acima"
+                            style="width:100%;background:var(--bg);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-weight:600;cursor:default;outline:none">
+                    </div>
+                    <div style="font-size:22px;color:var(--text2);padding-top:16px">→</div>
+                    <div style="flex:1;min-width:150px">
+                        <div style="font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700">Para *</div>
+                        <input type="text" id="tParaNome1" placeholder="Nome de quem vai receber"
+                            style="width:100%;background:var(--bg);border:1px solid rgba(59,130,246,0.35);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none">
+                    </div>
+                </div>
             </div>
-            <div style="margin-bottom:14px">
-                <label class="edit-label">Para – Nome 2 (opcional)</label>
-                <input class="edit-input" type="text" id="tParaNome2" placeholder="Nome adicional">
-            </div>
-            <div style="margin-bottom:14px">
-                <label class="edit-label">Observação</label>
-                <textarea class="edit-input" id="tObs" rows="3" style="resize:vertical"
-                    placeholder="Motivo ou detalhes da transferência..."></textarea>
+
+            <!-- Nome 2 + Observação -->
+            <div class="modal-row">
+                <div class="modal-field">
+                    <label>Nome 2 (opcional)</label>
+                    <input type="text" id="tParaNome2" placeholder="Ex: repórter, cinegrafista...">
+                </div>
+                <div class="modal-field">
+                    <label>Observação</label>
+                    <textarea id="tObs" placeholder="Motivo, evento, detalhes..."></textarea>
+                </div>
             </div>
         </div>
         <div class="modal-foot">
-            <button class="btn-edit-cancel" onclick="closeTransferModal()">Cancelar</button>
+            <div class="modal-foot-left">
+                <button class="btn-edit-cancel" onclick="closeTransferModal()">Cancelar</button>
+            </div>
             <button class="btn-edit-save" onclick="salvarTransferencia()">Confirmar Transferência</button>
         </div>
     </div>
@@ -3058,8 +3100,15 @@ function openTransferModal() {
 
 function preencherDeTransfer() {
     const val = document.getElementById('tKit').value;
-    if (!val) return;
-    document.getElementById('tDe').value = JSON.parse(val).comQuem || '';
+    const info = document.getElementById('tKitInfo');
+    if (!val) { info.style.display = 'none'; document.getElementById('tDe').value = ''; return; }
+    const kit = JSON.parse(val);
+    document.getElementById('tDe').value = kit.comQuem || '';
+    document.getElementById('tInfoTipo').textContent    = kit.tipoKit  || '—';
+    document.getElementById('tInfoIphone').textContent  = kit.iphone   || '—';
+    document.getElementById('tInfoAndroid').textContent = kit.android  || '—';
+    document.getElementById('tInfoComQuem').textContent = kit.comQuem  || '—';
+    info.style.display = 'block';
 }
 
 function closeTransferModal() {
