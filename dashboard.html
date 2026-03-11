@@ -2090,15 +2090,46 @@ function renderKits() {
         const conf = v.conf ? v.conf.split(',').filter(x => x.trim()).length : 0;
         const pct = Math.round(conf / ITENS.length * 100);
         const cor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
-        return `<div class="kit-c">
+        const foiTransferido = emUso && v.custodia && v.custodia.length > 0;
+
+        // Monta cadeia: entregue a → transf1 → transf2 → atual
+        let cadeiaHTML = '';
+        if (foiTransferido) {
+            const passos = [v.entregaPor ? { nome: v.custodia[0]?.de || v.entregaPor } : null]
+                .filter(Boolean);
+            // todos os "para" de cada transferência
+            const nomes = [v.custodia[0].de, ...v.custodia.map(c => c.para)];
+            const unicos = [...new Set(nomes)];
+            cadeiaHTML = `
+            <div style="margin:10px 0 6px;padding:10px 12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:8px">
+                <div style="font-size:10px;color:var(--purple);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:6px">Cadeia de custódia</div>
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:12px">
+                    ${unicos.map((nome, idx) => {
+                        const isAtual = idx === unicos.length - 1;
+                        return `<span style="
+                            padding:3px 8px;border-radius:6px;font-weight:600;
+                            background:${isAtual ? 'rgba(168,85,247,0.2)' : 'var(--bg-hover)'};
+                            color:${isAtual ? 'var(--purple)' : 'var(--text2)'};
+                            border:1px solid ${isAtual ? 'rgba(168,85,247,0.35)' : 'var(--border)'}
+                        ">${nome}</span>${idx < unicos.length - 1 ? '<span style="color:var(--text2)">→</span>' : ''}`;
+                    }).join('')}
+                </div>
+            </div>`;
+        }
+
+        return `<div class="kit-c" style="${foiTransferido ? 'border-color:rgba(168,85,247,0.3)' : ''}">
             <div class="kit-c-head">
                 <div><div class="kit-c-title">Kit #${i + 1} - ${v.tipo}</div><div class="kit-c-sub">${v.iphone} + ${v.android}</div></div>
-                <span class="badge ${emUso ? 'b-uso' : 'b-disp'}">${emUso ? 'Em Uso' : 'Disponivel'}</span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+                    <span class="badge ${emUso ? 'b-uso' : 'b-disp'}">${emUso ? 'Em Uso' : 'Disponivel'}</span>
+                    ${foiTransferido ? `<span class="badge" style="background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)">Transferido</span>` : ''}
+                </div>
             </div>
-            <div class="kit-row"><span class="kit-row-l">${emUso ? 'Com quem' : 'Devolvido por'}</span><span>${emUso ? v.comQuem : (v.devPor || '-')}</span></div>
+            <div class="kit-row"><span class="kit-row-l">${emUso ? 'Com quem' : 'Devolvido por'}</span><span style="${foiTransferido ? 'color:var(--purple);font-weight:600' : ''}">${emUso ? v.comQuem : (v.devPor || '-')}</span></div>
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Entregue por' : 'Recebido por'}</span><span>${emUso ? v.entregaPor : (v.recPor || '-')}</span></div>
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Data entrega' : 'Data devolucao'}</span><span>${emUso ? v.dtEntrega : (v.dtDevolucao || '-')}</span></div>
             ${emUso ? `<div class="kit-row"><span class="kit-row-l">Tempo fora</span><span style="color:var(--yellow);font-weight:600">${tempoDesde(v.dtEntrega)}</span></div>` : ''}
+            ${cadeiaHTML}
             ${v.falt?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.falt}</span></div>` : ''}
             ${v.obs ? `<div class="kit-row"><span class="kit-row-l">Obs</span><span style="font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.obs}</span></div>` : ''}
             <div class="prog">
