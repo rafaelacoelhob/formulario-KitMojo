@@ -1031,6 +1031,46 @@
     </div>
 </div>
 
+<!-- MODAL DE TRANSFERÊNCIA -->
+<div class="modal-overlay" id="transferModal">
+    <div class="modal">
+        <div class="modal-head">
+            <h3>Registrar Transferência</h3>
+            <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="edit-msg" id="transferMsg"></div>
+            <div style="margin-bottom:14px">
+                <label class="edit-label">Kit em uso</label>
+                <select class="edit-input" id="tKit" onchange="preencherDeTransfer()">
+                    <option value="">Selecione o kit...</option>
+                </select>
+            </div>
+            <div style="margin-bottom:14px">
+                <label class="edit-label">De (quem está com o kit)</label>
+                <input class="edit-input" type="text" id="tDe" readonly placeholder="Preenchido automaticamente">
+            </div>
+            <div style="margin-bottom:14px">
+                <label class="edit-label">Para – Nome 1 *</label>
+                <input class="edit-input" type="text" id="tParaNome1" placeholder="Nome de quem vai receber">
+            </div>
+            <div style="margin-bottom:14px">
+                <label class="edit-label">Para – Nome 2 (opcional)</label>
+                <input class="edit-input" type="text" id="tParaNome2" placeholder="Nome adicional">
+            </div>
+            <div style="margin-bottom:14px">
+                <label class="edit-label">Observação</label>
+                <textarea class="edit-input" id="tObs" rows="3" style="resize:vertical"
+                    placeholder="Motivo ou detalhes da transferência..."></textarea>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-edit-cancel" onclick="closeTransferModal()">Cancelar</button>
+            <button class="btn-edit-save" onclick="salvarTransferencia()">Confirmar Transferência</button>
+        </div>
+    </div>
+</div>
+
 <!-- SIDEBAR -->
 <nav class="sidebar">
     <div class="sidebar-brand">
@@ -1045,6 +1085,7 @@
         <button class="nav-btn" data-sec="solicitacoes"><span class="ico"></span> Solicitacoes</button>
         <button class="nav-btn" data-sec="historico"><span class="ico"></span> Historico</button>
         <button class="nav-btn" data-sec="timeline"><span class="ico"></span> Linha do Tempo</button>
+        <button class="nav-btn" data-sec="transferencias"><span class="ico"></span> Transferências</button>
     </div>
     <div class="sidebar-foot">
         <button class="btn-refresh" id="btnRef" onclick="load()">Atualizar Dados</button>
@@ -1063,6 +1104,7 @@
         <button data-sec="solicitacoes">Solicit.</button>
         <button data-sec="historico">Historico</button>
         <button data-sec="timeline">Timeline</button>
+        <button data-sec="transferencias">Transf.</button>
     </div>
 </div>
 
@@ -1310,6 +1352,17 @@
     <div class="card"><div class="tl" id="tlBox"></div></div>
 </section>
 
+<!-- ========== TRANSFERÊNCIAS ========== -->
+<section class="sec" id="sec-transferencias">
+    <div class="page-head">
+        <h2>Transferências de Kit</h2>
+        <div class="head-actions">
+            <button class="btn-edit-save" onclick="openTransferModal()">+ Nova Transferência</button>
+        </div>
+    </div>
+    <div id="transferenciasContent"></div>
+</section>
+
 </div>
 
 <script>
@@ -1379,21 +1432,50 @@ function calcKitStatus() {
     const kits = {};
     const sorted = [...all].sort((a, b) => pDate(a.dataHora) - pDate(b.dataHora));
 
-    sorted.forEach((r, idx) => {
-        // Chave unica: combinacao tipoKit + iphone + android + pessoa
+    sorted.forEach((r) => {
+        const tKit = r.tipoKit  || 'Kit';
+        const tiph = r.iphone   || '?';
+        const tand = r.android  || '?';
+
+        if (r.tipo === 'Transferência') {
+            // Encontra o kit em uso com esse modelo e atualiza o portador
+            const kitKey = Object.keys(kits).find(k => {
+                const v = kits[k];
+                return v.st === 'uso'
+                    && (v.tipo    || 'Kit') === tKit
+                    && (v.iphone  || '?')   === tiph
+                    && (v.android || '?')   === tand;
+            });
+            if (kitKey) {
+                const kit = kits[kitKey];
+                if (!kit.custodia) kit.custodia = [];
+                kit.custodia.push({
+                    de: r.nome1 || '?', para: r.nome2 || '?',
+                    data: r.dataHora, obs: r.observacao || ''
+                });
+                kit.comQuem = r.nome2 || '?';
+                const newKey = tKit + ' | ' + tiph + ' + ' + tand + ' | ' + (r.nome2 || '?');
+                kit.key = newKey;
+                kits[newKey] = kit;
+                delete kits[kitKey];
+            }
+            return;
+        }
+
         const pessoa = r.tipo === 'ENTREGA' ? (r.nome2 || '?') : (r.nome1 || '?');
-        const key = (r.tipoKit || 'Kit') + ' | ' + (r.iphone || '?') + ' + ' + (r.android || '?') + ' | ' + pessoa;
+        const key = tKit + ' | ' + tiph + ' + ' + tand + ' | ' + pessoa;
 
         if (r.tipo === 'ENTREGA') {
             kits[key] = {
                 key, st: 'uso',
-                tipo: r.tipoKit, iphone: r.iphone, android: r.android,
+                tipo: tKit, iphone: tiph, android: tand,
                 portSrt: r.portSrt || '', tipoChip: r.tipoChip || '',
                 comQuem: r.nome2, entregaPor: r.nome1,
                 dtEntrega: r.dataHora,
                 conf: r.itensConferidos, falt: r.itensFaltando,
                 obs: r.observacao,
-                historico: (kits[key]?.historico || 0) + 1
+                historico: (kits[key]?.historico || 0) + 1,
+                custodia: []
             };
         } else if (kits[key]) {
             kits[key].st = 'disp';
@@ -1640,7 +1722,7 @@ function filtrar() {
 function renderAll() {
     renderOverview(); renderCharts(); renderRecent();
     renderKits(); renderConferencia(); renderFaltando(); renderChartFalta();
-    renderHist(); renderTL();
+    renderHist(); renderTL(); renderTransferencias();
 }
 
 // ===== OVERVIEW - PAINEL DOS KITS =====
@@ -2956,6 +3038,111 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && editingIdx
 
 // Fechar modal clicando fora
 document.getElementById('editModal').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
+
+// ===== TRANSFERÊNCIAS =====
+
+function openTransferModal() {
+    const kitsUso = calcKitStatus().filter(k => k.st === 'uso');
+    const sel = document.getElementById('tKit');
+    sel.innerHTML = '<option value="">Selecione o kit...</option>';
+    kitsUso.forEach(kit => {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify({tipoKit: kit.tipo, iphone: kit.iphone, android: kit.android, comQuem: kit.comQuem});
+        opt.textContent = kit.tipo + ' | ' + kit.iphone + ' + ' + kit.android + '  →  ' + kit.comQuem;
+        sel.appendChild(opt);
+    });
+    ['tDe','tParaNome1','tParaNome2','tObs'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('transferMsg').textContent = '';
+    document.getElementById('transferModal').classList.add('on');
+}
+
+function preencherDeTransfer() {
+    const val = document.getElementById('tKit').value;
+    if (!val) return;
+    document.getElementById('tDe').value = JSON.parse(val).comQuem || '';
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').classList.remove('on');
+}
+
+async function salvarTransferencia() {
+    const val = document.getElementById('tKit').value;
+    const msg = document.getElementById('transferMsg');
+    if (!val) { msg.textContent = 'Selecione um kit.'; return; }
+    const kit   = JSON.parse(val);
+    const para1 = document.getElementById('tParaNome1').value.trim();
+    const para2 = document.getElementById('tParaNome2').value.trim();
+    if (!para1) { msg.textContent = 'Informe o nome de quem vai receber.'; return; }
+    const payload = {
+        tipo: 'Transferência',
+        nome1: kit.comQuem || '',
+        nome2: para2 ? para1 + ' / ' + para2 : para1,
+        tipoKit: kit.tipoKit || '', iphone: kit.iphone || '', android: kit.android || '',
+        observacao: document.getElementById('tObs').value.trim(),
+        dataHora: new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'})
+    };
+    msg.textContent = 'Salvando...';
+    try {
+        const resp = await fetch(SCRIPT_URL, {method: 'POST', body: JSON.stringify(payload)});
+        const json = await resp.json();
+        if (json.status === 'ok') {
+            msg.textContent = 'Transferência registrada!';
+            setTimeout(() => { closeTransferModal(); load(); }, 1500);
+        } else {
+            msg.textContent = 'Erro: ' + (json.message || 'desconhecido');
+        }
+    } catch (err) { msg.textContent = 'Erro de conexão: ' + err.message; }
+}
+
+function renderTransferencias() {
+    const div = document.getElementById('transferenciasContent');
+    if (!div) return;
+    const transfers = all.filter(r => r.tipo === 'Transferência').sort((a, b) => pDate(b.dataHora) - pDate(a.dataHora));
+    if (!transfers.length) {
+        div.innerHTML = '<div class="empty"><h3>Nenhuma transferência registrada</h3><p>Use o botão acima para registrar quando um kit for repassado para outra pessoa.</p></div>';
+        return;
+    }
+    const porKit = {};
+    transfers.forEach(r => {
+        const k = (r.tipoKit || '?') + ' | ' + (r.iphone || '?') + ' + ' + (r.android || '?');
+        if (!porKit[k]) porKit[k] = [];
+        porKit[k].push(r);
+    });
+    let out = '<div class="kit-grid" style="margin-bottom:24px">';
+    Object.entries(porKit).forEach(([kit, rows]) => {
+        const chain = rows.slice().reverse();
+        out += '<div class="kit-c"><div class="kit-c-head"><div>';
+        out += '<div class="kit-c-title">' + (rows[0].tipoKit || '?') + '</div>';
+        out += '<div class="kit-c-sub">' + (rows[0].iphone || '?') + ' + ' + (rows[0].android || '?') + '</div>';
+        out += '</div><span class="badge b-uso">' + rows.length + ' transf.</span></div>';
+        out += '<div class="kit-row-l" style="font-size:12px;margin-bottom:6px">Cadeia de custódia:</div>';
+        chain.forEach(r => {
+            out += '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">';
+            out += '<span style="color:var(--text2);min-width:110px">' + (r.dataHora || '') + '</span>';
+            out += '<span style="color:var(--red)">' + (r.nome1 || '?') + '</span>';
+            out += '<span style="color:var(--text2)">→</span>';
+            out += '<span style="color:var(--blue)">' + (r.nome2 || '?') + '</span>';
+            if (r.observacao) out += '<span style="color:var(--text2);font-style:italic">(' + r.observacao + ')</span>';
+            out += '</div>';
+        });
+        out += '</div>';
+    });
+    out += '</div>';
+    out += '<div class="table-wrap"><table class="table"><thead><tr>';
+    out += '<th>Data/Hora</th><th>Kit</th><th>De</th><th>Para</th><th>Observação</th>';
+    out += '</tr></thead><tbody>';
+    transfers.forEach(r => {
+        out += '<tr><td>' + (r.dataHora || '') + '</td>';
+        out += '<td>' + (r.tipoKit || '') + ' | ' + (r.iphone || '') + ' + ' + (r.android || '') + '</td>';
+        out += '<td>' + (r.nome1 || '') + '</td><td>' + (r.nome2 || '') + '</td>';
+        out += '<td>' + (r.observacao || '') + '</td></tr>';
+    });
+    out += '</tbody></table></div>';
+    div.innerHTML = out;
+}
+
+document.getElementById('transferModal').addEventListener('click', function(e) { if (e.target === this) closeTransferModal(); });
 
 // ===== INIT =====
 load();
