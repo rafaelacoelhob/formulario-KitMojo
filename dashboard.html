@@ -1830,10 +1830,12 @@ function renderOverview() {
 
     grid.innerHTML = kitList.map((kit, i) => {
         const emUso = kit.st === 'uso';
-        const conf = kit.conf ? kit.conf.split(',').filter(x => x.trim()).length : 0;
+        const itensRef = emUso ? kit.conf  : (kit.confDev || kit.conf);
+        const faltRef  = emUso ? kit.falt  : (kit.faltDev || kit.falt);
+        const conf = itensRef ? itensRef.split(',').filter(x => x.trim()).length : 0;
         const pct = Math.round(conf / ITENS.length * 100);
         const barColor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
-        const faltList = kit.falt?.trim() ? kit.falt.split(',').map(x => x.trim()).filter(Boolean) : [];
+        const faltList = faltRef?.trim() ? faltRef.split(',').map(x => x.trim()).filter(Boolean) : [];
 
         return `<div class="ov-kit">
             <div class="ov-kit-top">
