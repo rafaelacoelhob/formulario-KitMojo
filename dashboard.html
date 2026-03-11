@@ -3098,47 +3098,78 @@ async function salvarTransferencia() {
 function renderTransferencias() {
     const div = document.getElementById('transferenciasContent');
     if (!div) return;
-    const transfers = all.filter(r => r.tipo === 'Transferência').sort((a, b) => pDate(b.dataHora) - pDate(a.dataHora));
+    const transfers = all.filter(r => r.tipo === 'Transferência').sort((a, b) => pDate(a.dataHora) - pDate(b.dataHora));
     if (!transfers.length) {
         div.innerHTML = '<div class="empty"><h3>Nenhuma transferência registrada</h3><p>Use o botão acima para registrar quando um kit for repassado para outra pessoa.</p></div>';
         return;
     }
+
+    // Agrupa por kit
     const porKit = {};
     transfers.forEach(r => {
-        const k = (r.tipoKit || '?') + ' | ' + (r.iphone || '?') + ' + ' + (r.android || '?');
-        if (!porKit[k]) porKit[k] = [];
-        porKit[k].push(r);
+        const k = (r.tipoKit || '?') + '__' + (r.iphone || '?') + '__' + (r.android || '?');
+        if (!porKit[k]) porKit[k] = { tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, rows: [] };
+        porKit[k].rows.push(r);
     });
-    let out = '<div class="kit-grid" style="margin-bottom:24px">';
-    Object.entries(porKit).forEach(([kit, rows]) => {
-        const chain = rows.slice().reverse();
-        out += '<div class="kit-c"><div class="kit-c-head"><div>';
-        out += '<div class="kit-c-title">' + (rows[0].tipoKit || '?') + '</div>';
-        out += '<div class="kit-c-sub">' + (rows[0].iphone || '?') + ' + ' + (rows[0].android || '?') + '</div>';
-        out += '</div><span class="badge b-uso">' + rows.length + ' transf.</span></div>';
-        out += '<div class="kit-row-l" style="font-size:12px;margin-bottom:6px">Cadeia de custódia:</div>';
-        chain.forEach(r => {
-            out += '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">';
-            out += '<span style="color:var(--text2);min-width:110px">' + (r.dataHora || '') + '</span>';
-            out += '<span style="color:var(--red)">' + (r.nome1 || '?') + '</span>';
-            out += '<span style="color:var(--text2)">→</span>';
-            out += '<span style="color:var(--blue)">' + (r.nome2 || '?') + '</span>';
-            if (r.observacao) out += '<span style="color:var(--text2);font-style:italic">(' + r.observacao + ')</span>';
-            out += '</div>';
-        });
+
+    let out = '';
+
+    Object.values(porKit).forEach(kit => {
+        const chain = kit.rows; // já em ordem cronológica
+
+        out += '<div class="card" style="margin-bottom:20px;padding:24px">';
+
+        // Cabeçalho do card
+        out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">';
+        out += '<div>';
+        out += '<div style="font-size:16px;font-weight:700">' + (kit.tipoKit || '?') + '</div>';
+        out += '<div style="font-size:13px;color:var(--text2);margin-top:3px">' + (kit.iphone || '?') + ' &nbsp;+&nbsp; ' + (kit.android || '?') + '</div>';
         out += '</div>';
+        out += '<span class="badge b-uso" style="font-size:13px;padding:6px 14px">' + chain.length + ' transferência' + (chain.length > 1 ? 's' : '') + '</span>';
+        out += '</div>';
+
+        // Timeline de custódia
+        out += '<div style="position:relative;padding-left:32px">';
+        // linha vertical
+        out += '<div style="position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:var(--border)"></div>';
+
+        chain.forEach((r, i) => {
+            const isLast = i === chain.length - 1;
+            // ponto da timeline
+            out += '<div style="position:relative;margin-bottom:' + (isLast ? '0' : '20px') + '">';
+            out += '<div style="position:absolute;left:-32px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--blue);border:2px solid var(--bg-card);box-shadow:0 0 0 2px var(--blue)"></div>';
+
+            out += '<div style="background:var(--bg-hover);border:1px solid var(--border);border-radius:10px;padding:14px 16px">';
+
+            // data
+            out += '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">' + (r.dataHora || '') + '</div>';
+
+            // de → para
+            out += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+            out += '<div style="background:var(--red-bg);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:6px 12px">';
+            out += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">DE</div>';
+            out += '<div style="font-size:14px;font-weight:600;color:var(--red)">' + (r.nome1 || '?') + '</div>';
+            out += '</div>';
+            out += '<div style="font-size:20px;color:var(--text2)">→</div>';
+            out += '<div style="background:var(--blue-bg);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:6px 12px">';
+            out += '<div style="font-size:10px;color:var(--text2);margin-bottom:2px">PARA</div>';
+            out += '<div style="font-size:14px;font-weight:600;color:var(--blue)">' + (r.nome2 || '?') + '</div>';
+            out += '</div>';
+            out += '</div>';
+
+            // observação
+            if (r.observacao) {
+                out += '<div style="margin-top:10px;font-size:12px;color:var(--text2);font-style:italic;border-top:1px solid var(--border);padding-top:8px">' + r.observacao + '</div>';
+            }
+
+            out += '</div>'; // card inner
+            out += '</div>'; // item timeline
+        });
+
+        out += '</div>'; // timeline
+        out += '</div>'; // card
     });
-    out += '</div>';
-    out += '<div class="table-wrap"><table class="table"><thead><tr>';
-    out += '<th>Data/Hora</th><th>Kit</th><th>De</th><th>Para</th><th>Observação</th>';
-    out += '</tr></thead><tbody>';
-    transfers.forEach(r => {
-        out += '<tr><td>' + (r.dataHora || '') + '</td>';
-        out += '<td>' + (r.tipoKit || '') + ' | ' + (r.iphone || '') + ' + ' + (r.android || '') + '</td>';
-        out += '<td>' + (r.nome1 || '') + '</td><td>' + (r.nome2 || '') + '</td>';
-        out += '<td>' + (r.observacao || '') + '</td></tr>';
-    });
-    out += '</tbody></table></div>';
+
     div.innerHTML = out;
 }
 
