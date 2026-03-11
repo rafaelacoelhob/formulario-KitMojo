@@ -1479,7 +1479,7 @@ function calcKitStatus() {
         const tiph = r.iphone   || '?';
         const tand = r.android  || '?';
 
-        if (r.tipo === 'Transferência') {
+        if (r.tipo === 'TRANSFERÊNCIA') {
             // Encontra o kit em uso com esse modelo e atualiza o portador
             const kitKey = Object.keys(kits).find(k => {
                 const v = kits[k];
@@ -3178,7 +3178,7 @@ async function salvarTransferencia() {
 function renderTransferencias() {
     const div = document.getElementById('transferenciasContent');
     if (!div) return;
-    const transfers = all.filter(r => r.tipo === 'Transferência').sort((a, b) => pDate(a.dataHora) - pDate(b.dataHora));
+    const transfers = all.filter(r => r.tipo === 'TRANSFERÊNCIA').sort((a, b) => pDate(a.dataHora) - pDate(b.dataHora));
     if (!transfers.length) {
         div.innerHTML = '<div class="empty"><h3>Nenhuma transferência registrada</h3><p>Use o botão acima para registrar quando um kit for repassado para outra pessoa.</p></div>';
         return;
