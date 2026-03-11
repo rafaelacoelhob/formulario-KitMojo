@@ -1625,7 +1625,7 @@ function parseGviz(text) {
             return '';
         });
         return rowToRegistro(vals);
-    }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+    }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO' || r.tipo === 'TRANSFERÊNCIA');
 }
 
 // ===== CARREGAR VIA JSONP (bypass CORS para file:///) =====
@@ -1673,7 +1673,7 @@ function parseGvizResponse(response) {
             return '';
         });
         return rowToRegistro(vals);
-    }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+    }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO' || r.tipo === 'TRANSFERÊNCIA');
 }
 
 // ===== CARREGAR =====
@@ -1709,7 +1709,7 @@ async function load() {
                 if (linhas.length > 1) {
                     all = linhas.slice(1)
                         .map(row => rowToRegistro(row))
-                        .filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+                        .filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO' || r.tipo === 'TRANSFERÊNCIA');
                     if (all.length > 0) { loaded = true; console.log('[KitMojo] Carregado via CSV:', all.length); }
                 }
             }
