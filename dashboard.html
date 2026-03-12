@@ -96,6 +96,51 @@
 
         .last-sync { font-size: 11px; color: var(--text2); text-align: center; margin-top: 8px; }
 
+        .btn-theme {
+            width: 100%; padding: 8px 10px;
+            background: none; border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text2);
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; margin-top: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-theme:hover { border-color: var(--text2); color: var(--text); }
+
+        /* ===== TEMA CLARO ===== */
+        body.light {
+            --bg: #f0f2f5;
+            --bg-card: #ffffff;
+            --bg-hover: #f5f7fa;
+            --border: #dde1ec;
+            --text: #1a1d27;
+            --text2: #6b7280;
+            --blue-bg: rgba(59,130,246,0.08);
+            --green-bg: rgba(34,197,94,0.08);
+            --red-bg: rgba(239,68,68,0.08);
+            --yellow-bg: rgba(245,158,11,0.08);
+            --purple-bg: rgba(168,85,247,0.08);
+            --cyan-bg: rgba(6,182,212,0.08);
+        }
+        body.light .modal-overlay { background: rgba(200,205,215,0.75); }
+        body.light .sidebar-brand h1 {
+            background: linear-gradient(135deg, #2563eb, #9333ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== FORMULARIO EMBED ===== */
+        .form-embed-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            height: calc(100vh - 120px);
+            min-height: 600px;
+        }
+        .form-embed-wrap iframe {
+            width: 100%; height: 100%; border: none; display: block;
+        }
+
         /* ===== MAIN ===== */
         .main { margin-left: 250px; padding: 28px 32px; }
 
@@ -1302,10 +1347,12 @@
         <button class="nav-btn" data-sec="historico"><span class="ico"></span> Historico</button>
         <button class="nav-btn" data-sec="timeline"><span class="ico"></span> Linha do Tempo</button>
         <button class="nav-btn" data-sec="transferencias"><span class="ico"></span> Transferências</button>
+        <button class="nav-btn" data-sec="formulario"><span class="ico"></span> Formulário</button>
     </div>
     <div class="sidebar-foot">
         <button class="btn-refresh" id="btnRef" onclick="load()">Atualizar Dados</button>
         <div class="last-sync" id="lastSync">Nunca atualizado</div>
+        <button class="btn-theme" id="btnTheme" onclick="toggleTheme()">🌙 Modo Escuro</button>
     </div>
 </nav>
 
@@ -1321,6 +1368,7 @@
         <button data-sec="historico">Historico</button>
         <button data-sec="timeline">Timeline</button>
         <button data-sec="transferencias">Transf.</button>
+        <button data-sec="formulario">Form.</button>
     </div>
 </div>
 
@@ -1577,6 +1625,19 @@
         </div>
     </div>
     <div id="transferenciasContent"></div>
+</section>
+
+<!-- ========== FORMULÁRIO ========== -->
+<section class="sec" id="sec-formulario">
+    <div class="page-head">
+        <h2>Formulário de Entrega / Devolução</h2>
+        <div class="head-actions">
+            <a class="btn-edit-src" href="https://kitmojo-temp.vercel.app/" target="_blank">Abrir em nova aba</a>
+        </div>
+    </div>
+    <div class="form-embed-wrap">
+        <iframe src="https://kitmojo-temp.vercel.app/" id="formIframe" title="Formulário KitMojo" allow="camera; microphone"></iframe>
+    </div>
 </section>
 
 </div>
@@ -3447,6 +3508,29 @@ function renderTransferencias() {
 
 document.getElementById('transferModal').addEventListener('click', function(e) { if (e.target === this) closeTransferModal(); });
 document.getElementById('atenderModal').addEventListener('click', function(e) { if (e.target === this) closeAtenderModal(); });
+
+// ===== TEMA CLARO/ESCURO =====
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    localStorage.setItem('kitmojo-theme', isLight ? 'light' : 'dark');
+    updateThemeBtn();
+}
+
+function updateThemeBtn() {
+    const btn = document.getElementById('btnTheme');
+    if (document.body.classList.contains('light')) {
+        btn.textContent = '🌙 Modo Escuro';
+    } else {
+        btn.textContent = '☀️ Modo Claro';
+    }
+}
+
+// Aplicar tema salvo ao carregar
+(function() {
+    const saved = localStorage.getItem('kitmojo-theme');
+    if (saved === 'light') document.body.classList.add('light');
+    updateThemeBtn();
+})();
 
 // ===== ATENDER SOLICITACAO =====
 let atendendoSolIdx = -1;
