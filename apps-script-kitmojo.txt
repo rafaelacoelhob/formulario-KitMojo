@@ -253,7 +253,7 @@ function doGet(e) {
           .createTextOutput(JSON.stringify([]))
           .setMimeType(ContentService.MimeType.JSON);
       }
-      var data = sheet.getDataRange().getValues();
+      var data = sheet.getDataRange().getDisplayValues();
       var resultado = [];
       for (var i = 1; i < data.length; i++) {
         resultado.push({
@@ -315,6 +315,28 @@ function testeSolicitacao() {
     }
   });
   Logger.log(resultado.getContent());
+}
+
+function testeSlack() {
+  var webhookUrl = PropertiesService.getScriptProperties().getProperty('SLACK_WEBHOOK');
+  Logger.log('Webhook URL: ' + webhookUrl);
+
+  if (!webhookUrl) {
+    Logger.log('ERRO: propriedade SLACK_WEBHOOK nao encontrada!');
+    return;
+  }
+
+  try {
+    var resp = UrlFetchApp.fetch(webhookUrl, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ text: '✅ Teste do KitMojo Bot — está funcionando!' })
+    });
+    Logger.log('Status: ' + resp.getResponseCode());
+    Logger.log('Resposta: ' + resp.getContentText());
+  } catch (err) {
+    Logger.log('ERRO: ' + err.toString());
+  }
 }
 
 function autorizarDrive() {
