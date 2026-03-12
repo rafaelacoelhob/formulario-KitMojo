@@ -3130,62 +3130,62 @@ function fmtData(str) {
 async function loadSolicitacoes() {
     let loaded = false;
 
-    // Tentativa 1: gviz/JSONP da aba Solicitacoes (funciona sem CORS)
+    // Tentativa 1: Apps Script GET — retorna valores brutos sem interpretar datas
     try {
-        const ss = await new Promise((resolve, reject) => {
-            const cbName = '_solCallback_' + Date.now();
-            const timeout = setTimeout(() => { delete window[cbName]; scr.remove(); reject('Timeout'); }, 10000);
-            window[cbName] = function(response) {
-                clearTimeout(timeout); delete window[cbName]; scr.remove(); resolve(response);
-            };
-            const url = `https://docs.google.com/spreadsheets/d/${SOL_DB_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&sheet=Solicitacoes`;
-            const scr = document.createElement('script');
-            scr.src = url;
-            scr.onerror = () => { clearTimeout(timeout); delete window[cbName]; scr.remove(); reject('Error'); };
-            document.head.appendChild(scr);
-        });
-
-        if (ss && ss.table && ss.table.rows) {
-            solicitacoes = ss.table.rows.map(row => {
-                const v = (row.c || []).map(c => {
-                    if (!c) return '';
-                    if (c.f) return c.f;
-                    if (c.v !== null && c.v !== undefined) return String(c.v);
-                    return '';
-                });
-                return {
-                    id: (v[0] || '').trim(),
-                    dataSolicitacao: (v[1] || '').trim(),
-                    quando: (v[2] || '').trim(),
-                    onde: (v[3] || '').trim(),
-                    quem: (v[4] || '').trim(),
-                    projeto: (v[5] || '').trim(),
-                    observacao: (v[6] || '').trim(),
-                    status: (v[7] || '').trim(),
-                    dataAtendimento: (v[8] || '').trim()
-                };
-            }).filter(s => s.id);
-            loaded = solicitacoes.length > 0;
-            console.log('[KitMojo] Solicitacoes via gviz:', solicitacoes.length);
+        const resp = await fetch(SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (Array.isArray(data) && data.length > 0) {
+                solicitacoes = data;
+                loaded = true;
+                console.log('[KitMojo] Solicitacoes via API:', solicitacoes.length);
+            }
         }
     } catch (e) {
-        console.warn('[KitMojo] Solicitacoes gviz falhou:', e);
+        console.warn('[KitMojo] Solicitacoes API falhou:', e);
     }
 
-    // Tentativa 2: fetch via Apps Script GET
+    // Tentativa 2: gviz/JSONP como fallback
     if (!loaded) {
         try {
-            const resp = await fetch(SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
-            if (resp.ok) {
-                const data = await resp.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    solicitacoes = data;
-                    loaded = true;
-                    console.log('[KitMojo] Solicitacoes via API:', solicitacoes.length);
-                }
+            const ss = await new Promise((resolve, reject) => {
+                const cbName = '_solCallback_' + Date.now();
+                const timeout = setTimeout(() => { delete window[cbName]; scr.remove(); reject('Timeout'); }, 10000);
+                window[cbName] = function(response) {
+                    clearTimeout(timeout); delete window[cbName]; scr.remove(); resolve(response);
+                };
+                const url = `https://docs.google.com/spreadsheets/d/${SOL_DB_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&sheet=Solicitacoes`;
+                const scr = document.createElement('script');
+                scr.src = url;
+                scr.onerror = () => { clearTimeout(timeout); delete window[cbName]; scr.remove(); reject('Error'); };
+                document.head.appendChild(scr);
+            });
+
+            if (ss && ss.table && ss.table.rows) {
+                solicitacoes = ss.table.rows.map(row => {
+                    const v = (row.c || []).map(c => {
+                        if (!c) return '';
+                        if (c.f) return c.f;
+                        if (c.v !== null && c.v !== undefined) return String(c.v);
+                        return '';
+                    });
+                    return {
+                        id: (v[0] || '').trim(),
+                        dataSolicitacao: (v[1] || '').trim(),
+                        quando: (v[2] || '').trim(),
+                        onde: (v[3] || '').trim(),
+                        quem: (v[4] || '').trim(),
+                        projeto: (v[5] || '').trim(),
+                        observacao: (v[6] || '').trim(),
+                        status: (v[7] || '').trim(),
+                        dataAtendimento: (v[8] || '').trim()
+                    };
+                }).filter(s => s.id);
+                loaded = solicitacoes.length > 0;
+                console.log('[KitMojo] Solicitacoes via gviz:', solicitacoes.length);
             }
         } catch (e) {
-            console.warn('[KitMojo] Solicitacoes API falhou:', e);
+            console.warn('[KitMojo] Solicitacoes gviz falhou:', e);
         }
     }
 
