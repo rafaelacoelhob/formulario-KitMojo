@@ -1767,6 +1767,38 @@ function calcKitStatus() {
         }
     });
 
+    // Solicitações "Atendidas" sem kit registrado no KitMojo
+    // → aparecem como "Em Uso" até ter uma devolução associada
+    if (Array.isArray(solicitacoes)) {
+        const nomesEmUso = new Set(
+            Object.values(kits)
+                .filter(k => k.st === 'uso')
+                .map(k => (k.comQuem || '').toLowerCase().trim())
+        );
+
+        solicitacoes
+            .filter(s => s.status === 'Atendida' && s.quem)
+            .forEach(s => {
+                const nomeLower = (s.quem || '').toLowerCase().trim();
+                if (!nomesEmUso.has(nomeLower)) {
+                    const synKey = 'SOL:' + s.id;
+                    kits[synKey] = {
+                        key: synKey, st: 'uso',
+                        tipo: 'KitMojo', iphone: '—', android: '—',
+                        portSrt: '', tipoChip: '',
+                        comQuem: s.quem, entregaPor: '—',
+                        dtEntrega: s.dataAtendimento || s.dataSolicitacao,
+                        localEntrega: s.onde || '',
+                        conf: '', falt: '',
+                        obs: (s.projeto || '') + (s.quando ? ' · ' + s.quando : ''),
+                        historico: 1, custodia: [],
+                        fromSolicitacao: true, solId: s.id
+                    };
+                    nomesEmUso.add(nomeLower);
+                }
+            });
+    }
+
     return Object.values(kits);
 }
 
@@ -2068,17 +2100,18 @@ function renderOverview() {
 
     grid.innerHTML = kitList.map((kit, i) => {
         const emUso = kit.st === 'uso';
+        const isSol = kit.fromSolicitacao === true;
         const itensRef = emUso ? kit.conf  : (kit.confDev || kit.conf);
         const faltRef  = emUso ? kit.falt  : (kit.faltDev || kit.falt);
         const conf = itensRef ? itensRef.split(',').filter(x => x.trim()).length : 0;
-        const pct = Math.round(conf / ITENS.length * 100);
+        const pct = isSol ? 0 : Math.round(conf / ITENS.length * 100);
         const barColor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
         const faltList = faltRef?.trim() ? faltRef.split(',').map(x => x.trim()).filter(Boolean) : [];
 
-        return `<div class="ov-kit">
+        return `<div class="ov-kit"${isSol ? ' style="border-color:rgba(245,158,11,0.4)"' : ''}>
             <div class="ov-kit-top">
                 <div>
-                    <div class="ov-kit-num">Kit #${i + 1}</div>
+                    <div class="ov-kit-num">Kit #${i + 1}${isSol ? ' <span style="font-size:10px;color:var(--yellow);font-weight:700;background:rgba(245,158,11,0.12);padding:1px 6px;border-radius:4px;margin-left:4px">via Solicitação</span>' : ''}</div>
                     <div class="ov-kit-title">${kit.tipo || 'KitMojo'}</div>
                 </div>
                 <div class="ov-kit-status ${emUso ? 'uso' : 'disp'}">
@@ -2155,6 +2188,7 @@ function renderOverview() {
                     Fora ha <span class="tempo-val">${tempoDesde(kit.dtEntrega)}</span>
                 </div>` : ''}
 
+                ${isSol ? `<div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);font-size:12px;color:var(--yellow)">Entrega confirmada via solicitação — dados do kit não registrados</div>` : `
                 <div class="ov-kit-bar">
                     <div class="ov-bar-lbl">
                         <span style="color:var(--text2)">Itens conferidos</span>
@@ -2168,7 +2202,7 @@ function renderOverview() {
                 ${faltList.length ? `<div class="ov-kit-alert">
                     <strong>! ${faltList.length} ite${faltList.length > 1 ? 'ns faltando' : 'm faltando'}:</strong>
                     ${faltList.join(', ')}
-                </div>` : ''}
+                </div>` : ''}`}
 
                 ${kit.obs ? `<div style="margin-top:8px;font-size:12px;color:var(--text2);font-style:italic">Obs: ${kit.obs}</div>` : ''}
             </div>
@@ -2339,11 +2373,12 @@ function renderKits() {
 
     grid.innerHTML = kits.map((v, i) => {
         const emUso = v.st === 'uso';
+        const isSol = v.fromSolicitacao === true;
         // Usa itens da devolução quando disponível, senão da entrega
         const itensRef  = emUso ? v.conf    : (v.confDev || v.conf);
         const faltaRef  = emUso ? v.falt    : (v.faltDev || v.falt);
         const conf = itensRef ? itensRef.split(',').filter(x => x.trim()).length : 0;
-        const pct = Math.round(conf / ITENS.length * 100);
+        const pct = isSol ? 0 : Math.round(conf / ITENS.length * 100);
         const cor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
         const foiTransferido = emUso && v.custodia && v.custodia.length > 0;
 
@@ -2372,12 +2407,13 @@ function renderKits() {
             </div>`;
         }
 
-        return `<div class="kit-c" style="${foiTransferido ? 'border-color:rgba(168,85,247,0.3)' : ''}">
+        return `<div class="kit-c" style="${foiTransferido ? 'border-color:rgba(168,85,247,0.3)' : isSol ? 'border-color:rgba(245,158,11,0.4)' : ''}">
             <div class="kit-c-head">
                 <div><div class="kit-c-title">Kit #${i + 1} - ${v.tipo}</div><div class="kit-c-sub">${v.iphone} + ${v.android}</div></div>
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
                     <span class="badge ${emUso ? 'b-uso' : 'b-disp'}">${emUso ? 'Em Uso' : 'Disponivel'}</span>
                     ${foiTransferido ? `<span class="badge" style="background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)">Transferido</span>` : ''}
+                    ${isSol ? `<span class="badge" style="background:rgba(245,158,11,0.12);color:var(--yellow);border:1px solid rgba(245,158,11,0.25)">via Solicitação</span>` : ''}
                 </div>
             </div>
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Com quem' : 'Devolvido por'}</span><span style="${foiTransferido ? 'color:var(--purple);font-weight:600' : ''}">${emUso ? v.comQuem : (v.devPor || '-')}</span></div>
@@ -2392,10 +2428,13 @@ function renderKits() {
             ${cadeiaHTML}
             ${faltaRef?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${faltaRef}</span></div>` : ''}
             ${v.obs ? `<div class="kit-row"><span class="kit-row-l">Obs</span><span style="font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.obs}</span></div>` : ''}
-            <div class="prog">
-                <div class="prog-lbl"><span style="color:var(--text2)">Itens conferidos</span><span>${conf}/${ITENS.length} (${pct}%)</span></div>
-                <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${cor}"></div></div>
-            </div>
+            ${isSol
+                ? `<div style="margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);font-size:12px;color:var(--yellow)">Dados do kit não registrados</div>`
+                : `<div class="prog">
+                    <div class="prog-lbl"><span style="color:var(--text2)">Itens conferidos</span><span>${conf}/${ITENS.length} (${pct}%)</span></div>
+                    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${cor}"></div></div>
+                </div>`
+            }
         </div>`;
     }).join('');
 }
