@@ -171,6 +171,27 @@ function handleSolicitacao(ss, dados) {
     ''
   ]);
 
+  // Notifica o Slack
+  try {
+    var slackMsg = '*🎯 Nova Solicitação de KitMojo*\n'
+      + '*👤 Quem:* ' + (dados.quem || '—') + '\n'
+      + '*📅 Quando:* ' + (dados.quando || '—') + '\n'
+      + '*📍 Onde:* ' + (dados.onde || '—') + '\n'
+      + '*🎬 Projeto:* ' + (dados.projeto || '—') + '\n'
+      + (dados.observacao ? '*📝 Obs:* ' + dados.observacao + '\n' : '')
+      + '*🕐 Solicitado em:* ' + (dados.dataHora || new Date().toLocaleString('pt-BR'));
+
+    var webhookUrl = PropertiesService.getScriptProperties().getProperty('SLACK_WEBHOOK');
+    if (!webhookUrl) return;
+    UrlFetchApp.fetch(webhookUrl, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ text: slackMsg })
+    });
+  } catch (slackErr) {
+    Logger.log('Erro Slack: ' + slackErr.toString());
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ status: 'ok', id: id }))
     .setMimeType(ContentService.MimeType.JSON);
