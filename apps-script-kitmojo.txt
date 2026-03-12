@@ -66,6 +66,7 @@ function handleEditRegistro(ss, dados) {
       sheet.getRange(i + 1, 12).setValue(dados.observacao !== undefined ? dados.observacao : data[i][11]);
       // col 13 = Foto (URL) — nao altera
       sheet.getRange(i + 1, 14).setValue(dados.local !== undefined ? dados.local : (data[i][13] || ''));
+      // col 15 = SolicitacaoID — nao altera durante edicao
       found = true;
       break;
     }
@@ -85,9 +86,9 @@ function handleKitMojo(ss, dados) {
     sheet.appendRow([
       'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
       'Modelo iPhone', 'Modelo Android', 'Port SRT', 'Tipo Chip',
-      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)', 'Local'
+      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)', 'Local', 'SolicitacaoID'
     ]);
-    var headerRange = sheet.getRange(1, 1, 1, 14);
+    var headerRange = sheet.getRange(1, 1, 1, 15);
     headerRange.setFontWeight('bold');
     headerRange.setBackground('#1a1a2e');
     headerRange.setFontColor('#ffffff');
@@ -123,7 +124,8 @@ function handleKitMojo(ss, dados) {
     dados.itensFaltando || '',
     dados.observacao || '',
     fotoUrl,
-    dados.local || ''
+    dados.local || '',
+    dados.solicitacaoId || ''
   ]);
 
   if (dados.tipo === 'ENTREGA' && dados.solicitacaoId) {
