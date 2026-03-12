@@ -377,6 +377,53 @@
         .edit-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
         .edit-msg.ok { display: block; background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
         .edit-msg.err { display: block; background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+        /* ===== ATENDER MODAL ===== */
+        .sol-info-box {
+            background: var(--bg-hover); border: 1px solid var(--border);
+            border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+        }
+        .sol-info-box-title {
+            font-size: 11px; color: var(--text2); text-transform: uppercase;
+            letter-spacing: 0.5px; font-weight: 600; margin-bottom: 10px;
+        }
+        .sol-info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .sol-info-item { display: flex; flex-direction: column; gap: 2px; }
+        .sol-info-item span:first-child { font-size: 11px; color: var(--text2); }
+        .sol-info-item span:last-child { font-size: 13px; font-weight: 600; }
+        .atender-tabs {
+            display: flex; gap: 8px; margin-bottom: 18px;
+        }
+        .atender-tab {
+            flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);
+            background: none; color: var(--text2); text-align: center;
+        }
+        .atender-tab.active {
+            background: var(--blue-bg); color: var(--blue); border-color: rgba(59,130,246,0.35);
+        }
+        .atender-tab-content { display: none; }
+        .atender-tab-content.active { display: block; }
+        .atender-confirmar-box {
+            text-align: center; padding: 24px 16px;
+        }
+        .atender-confirmar-box .ico-big { font-size: 42px; margin-bottom: 12px; }
+        .atender-confirmar-box p { color: var(--text2); font-size: 14px; line-height: 1.6; }
+        .btn-atender-save {
+            padding: 10px 24px; background: var(--green); color: #fff;
+            border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-atender-save:hover { background: #16a34a; }
+        .btn-atender-save:disabled { opacity: 0.5; cursor: wait; }
+        .btn-atender-row {
+            padding: 4px 10px; background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.25); border-radius: 6px;
+            color: var(--green); font-size: 11px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-atender-row:hover { background: rgba(34,197,94,0.2); }
         .btn-edit-row {
             padding: 4px 10px; background: rgba(59,130,246,0.1);
             border: 1px solid rgba(59,130,246,0.25); border-radius: 6px;
@@ -1031,6 +1078,121 @@
     </div>
 </div>
 
+<!-- MODAL ATENDER SOLICITAÇÃO -->
+<div class="modal-overlay" id="atenderModal">
+    <div class="modal" style="max-width:720px">
+        <div class="modal-head">
+            <div>
+                <h3>Atender Solicitacao</h3>
+                <div style="font-size:12px;color:var(--text2);margin-top:2px" id="atenderModalId"></div>
+            </div>
+            <button class="modal-close" onclick="closeAtenderModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="edit-msg" id="atenderMsg"></div>
+
+            <!-- Info da solicitação -->
+            <div class="sol-info-box">
+                <div class="sol-info-box-title">Dados da Solicitacao</div>
+                <div class="sol-info-grid">
+                    <div class="sol-info-item"><span>Quando</span><span id="atInfoQuando">-</span></div>
+                    <div class="sol-info-item"><span>Onde</span><span id="atInfoOnde">-</span></div>
+                    <div class="sol-info-item"><span>Quem</span><span id="atInfoQuem">-</span></div>
+                    <div class="sol-info-item"><span>Projeto</span><span id="atInfoProjeto">-</span></div>
+                </div>
+                <div id="atInfoObsWrap" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                    <div class="sol-info-item"><span>Observacao</span><span id="atInfoObs" style="font-weight:400;color:var(--text2)"></span></div>
+                </div>
+            </div>
+
+            <!-- Abas -->
+            <div class="atender-tabs">
+                <button class="atender-tab active" id="tabRegistrarBtn" onclick="atenderTabSwitch('registrar')">Registrar Entrega do Kit</button>
+                <button class="atender-tab" id="tabConfirmarBtn" onclick="atenderTabSwitch('confirmar')">So Confirmar Atendimento</button>
+            </div>
+
+            <!-- Aba 1: Registrar Entrega -->
+            <div class="atender-tab-content active" id="tabRegistrar">
+                <div class="modal-row">
+                    <div class="modal-field">
+                        <label>Entregue por (Nome 1)</label>
+                        <input type="text" id="atNome1" placeholder="Quem esta entregando o kit">
+                    </div>
+                    <div class="modal-field">
+                        <label>Retirado por (Nome 2)</label>
+                        <input type="text" id="atNome2" placeholder="Quem vai usar o kit">
+                    </div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-field">
+                        <label>Tipo KitMojo</label>
+                        <select id="atTipoKit">
+                            <option value="LiveMode">LiveMode</option>
+                            <option value="Alugado">Alugado</option>
+                        </select>
+                    </div>
+                    <div class="modal-field">
+                        <label>Modelo iPhone</label>
+                        <select id="atIphone">
+                            <option value="iPhone 15 Pro">iPhone 15 Pro</option>
+                            <option value="iPhone 16">iPhone 16</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-field">
+                        <label>Modelo Android</label>
+                        <select id="atAndroid">
+                            <option value="Motorola">Motorola</option>
+                            <option value="Samsung">Samsung</option>
+                        </select>
+                    </div>
+                    <div class="modal-field">
+                        <label>Port SRT</label>
+                        <input type="text" id="atPortSrt" placeholder="Ex: 9000">
+                    </div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-field">
+                        <label>Tipo Chip</label>
+                        <select id="atTipoChip">
+                            <option value="Fisico">Fisico</option>
+                            <option value="eSIM">eSIM</option>
+                        </select>
+                    </div>
+                    <div class="modal-field">
+                        <label>Observacao</label>
+                        <input type="text" id="atObs" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="modal-itens-section">
+                    <div class="modal-itens-title">
+                        <span>Itens Conferidos</span>
+                        <span style="font-size:11px;color:var(--text2)" id="atItensCount">0/0</span>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:10px">
+                        <button class="btn-sm" style="font-size:11px;padding:4px 10px" onclick="atToggleAll(true)">Marcar Todos</button>
+                        <button class="btn-sm" style="font-size:11px;padding:4px 10px" onclick="atToggleAll(false)">Desmarcar Todos</button>
+                    </div>
+                    <div class="modal-itens-grid" id="atItensGrid"></div>
+                </div>
+            </div>
+
+            <!-- Aba 2: Só Confirmar -->
+            <div class="atender-tab-content" id="tabConfirmar">
+                <div class="atender-confirmar-box">
+                    <div class="ico-big">✓</div>
+                    <p>Confirme que esta solicitacao foi atendida.<br>Isso apenas atualiza o status para <strong style="color:var(--green)">Atendida</strong> na planilha,<br>sem registrar uma entrega de kit.</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-edit-cancel" onclick="closeAtenderModal()">Cancelar</button>
+            <button class="btn-atender-save" id="btnAtenderSave" onclick="salvarAtendimento()">Confirmar Atendimento</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL DE TRANSFERÊNCIA -->
 <div class="modal-overlay" id="transferModal">
     <div class="modal">
@@ -1189,7 +1351,7 @@
         <div class="tbl-wrap">
             <table>
                 <thead><tr>
-                    <th>Quando</th><th>Onde</th><th>Quem</th><th>Projeto</th><th>Solicitado em</th>
+                    <th>Quando</th><th>Onde</th><th>Quem</th><th>Projeto</th><th>Solicitado em</th><th></th>
                 </tr></thead>
                 <tbody id="tbSolRecent"></tbody>
             </table>
@@ -1342,7 +1504,7 @@
             <table>
                 <thead><tr>
                     <th>ID</th><th>Data Solicitacao</th><th>Quando</th><th>Onde</th>
-                    <th>Quem</th><th>Projeto</th><th>Obs</th><th>Status</th><th>Data Atendimento</th>
+                    <th>Quem</th><th>Projeto</th><th>Obs</th><th>Status</th><th>Data Atendimento</th><th></th>
                 </tr></thead>
                 <tbody id="tbSol"></tbody>
             </table>
@@ -2917,6 +3079,7 @@ function renderSolicitacoes() {
         const statusBadge = isPendente
             ? '<span class="badge b-uso">Pendente</span>'
             : '<span class="badge b-ok">Atendida</span>';
+        const solIdx = solicitacoes.indexOf(s);
         return `<tr>
             <td style="font-weight:600;font-size:12px">${s.id || '-'}</td>
             <td>${fmtData(s.dataSolicitacao)}</td>
@@ -2927,6 +3090,7 @@ function renderSolicitacoes() {
             <td style="max-width:150px;white-space:normal;font-size:12px">${s.observacao || '-'}</td>
             <td>${statusBadge}</td>
             <td>${fmtData(s.dataAtendimento)}</td>
+            <td>${isPendente ? `<button class="btn-atender-row" onclick="openAtenderModal(${solIdx})">Atender</button>` : '-'}</td>
         </tr>`;
     }).join('');
 
@@ -2949,13 +3113,17 @@ function renderSolOverview() {
     card.style.display = 'block';
     count.textContent = pendentes.length + ' pendente' + (pendentes.length > 1 ? 's' : '');
 
-    tb.innerHTML = pendentes.map(s => `<tr>
-        <td style="font-weight:600">${s.quando || '-'}</td>
-        <td>${s.onde || '-'}</td>
-        <td>${s.quem || '-'}</td>
-        <td>${s.projeto || '-'}</td>
-        <td style="font-size:12px;color:var(--text2)">${fmtData(s.dataSolicitacao)}</td>
-    </tr>`).join('');
+    tb.innerHTML = pendentes.map(s => {
+        const solIdx = solicitacoes.indexOf(s);
+        return `<tr>
+            <td style="font-weight:600">${s.quando || '-'}</td>
+            <td>${s.onde || '-'}</td>
+            <td>${s.quem || '-'}</td>
+            <td>${s.projeto || '-'}</td>
+            <td style="font-size:12px;color:var(--text2)">${fmtData(s.dataSolicitacao)}</td>
+            <td><button class="btn-atender-row" onclick="openAtenderModal(${solIdx})">Atender</button></td>
+        </tr>`;
+    }).join('');
 }
 
 
@@ -3259,6 +3427,180 @@ function renderTransferencias() {
 }
 
 document.getElementById('transferModal').addEventListener('click', function(e) { if (e.target === this) closeTransferModal(); });
+document.getElementById('atenderModal').addEventListener('click', function(e) { if (e.target === this) closeAtenderModal(); });
+
+// ===== ATENDER SOLICITACAO =====
+let atendendoSolIdx = -1;
+let atendenteModoAtual = 'registrar';
+
+function openAtenderModal(idx) {
+    const s = solicitacoes[idx];
+    if (!s) return;
+    atendendoSolIdx = idx;
+
+    // Preencher info da solicitação
+    document.getElementById('atenderModalId').textContent = s.id || '';
+    document.getElementById('atInfoQuando').textContent = s.quando || '-';
+    document.getElementById('atInfoOnde').textContent = s.onde || '-';
+    document.getElementById('atInfoQuem').textContent = s.quem || '-';
+    document.getElementById('atInfoProjeto').textContent = s.projeto || '-';
+    const obsWrap = document.getElementById('atInfoObsWrap');
+    if (s.observacao) {
+        document.getElementById('atInfoObs').textContent = s.observacao;
+        obsWrap.style.display = 'block';
+    } else {
+        obsWrap.style.display = 'none';
+    }
+
+    // Pre-preencher nome2 com quem solicitou
+    document.getElementById('atNome2').value = s.quem || '';
+    document.getElementById('atNome1').value = '';
+    document.getElementById('atPortSrt').value = '';
+    document.getElementById('atObs').value = '';
+    document.getElementById('atTipoKit').value = 'LiveMode';
+    document.getElementById('atIphone').value = 'iPhone 15 Pro';
+    document.getElementById('atAndroid').value = 'Motorola';
+    document.getElementById('atTipoChip').value = 'Fisico';
+
+    // Construir checklist de itens
+    const grid = document.getElementById('atItensGrid');
+    grid.innerHTML = ITENS.map((item, i) => `<label class="modal-item-check checked" id="atItem-${i}">
+        <input type="checkbox" checked onchange="atItemToggle(${i})">
+        <span>${item}</span>
+    </label>`).join('');
+    updateAtItensCount();
+
+    // Reset msg
+    const msg = document.getElementById('atenderMsg');
+    msg.className = 'edit-msg';
+    msg.textContent = '';
+
+    // Resetar aba para "registrar"
+    atenderTabSwitch('registrar');
+
+    document.getElementById('atenderModal').classList.add('on');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAtenderModal() {
+    document.getElementById('atenderModal').classList.remove('on');
+    document.body.style.overflow = '';
+    atendendoSolIdx = -1;
+}
+
+function atenderTabSwitch(tab) {
+    atendenteModoAtual = tab;
+    document.getElementById('tabRegistrarBtn').classList.toggle('active', tab === 'registrar');
+    document.getElementById('tabConfirmarBtn').classList.toggle('active', tab === 'confirmar');
+    document.getElementById('tabRegistrar').classList.toggle('active', tab === 'registrar');
+    document.getElementById('tabConfirmar').classList.toggle('active', tab === 'confirmar');
+    const btn = document.getElementById('btnAtenderSave');
+    btn.textContent = tab === 'registrar' ? 'Registrar Entrega' : 'Confirmar Atendimento';
+}
+
+function atItemToggle(i) {
+    const label = document.getElementById('atItem-' + i);
+    const cb = label.querySelector('input');
+    label.className = cb.checked ? 'modal-item-check checked' : 'modal-item-check';
+    updateAtItensCount();
+}
+
+function atToggleAll(state) {
+    ITENS.forEach((_, i) => {
+        const label = document.getElementById('atItem-' + i);
+        const cb = label.querySelector('input');
+        cb.checked = state;
+        label.className = state ? 'modal-item-check checked' : 'modal-item-check';
+    });
+    updateAtItensCount();
+}
+
+function updateAtItensCount() {
+    const checks = document.querySelectorAll('#atItensGrid input[type="checkbox"]');
+    const checked = Array.from(checks).filter(c => c.checked).length;
+    document.getElementById('atItensCount').textContent = checked + '/' + ITENS.length;
+}
+
+function getAtItens() {
+    const conferidos = [], faltando = [];
+    ITENS.forEach((item, i) => {
+        const cb = document.getElementById('atItem-' + i).querySelector('input');
+        if (cb.checked) conferidos.push(item);
+        else faltando.push(item);
+    });
+    return { conferidos, faltando };
+}
+
+async function salvarAtendimento() {
+    const s = solicitacoes[atendendoSolIdx];
+    if (!s) return;
+
+    const btn = document.getElementById('btnAtenderSave');
+    const msg = document.getElementById('atenderMsg');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    let payload;
+
+    if (atendenteModoAtual === 'registrar') {
+        const nome1 = document.getElementById('atNome1').value.trim();
+        const nome2 = document.getElementById('atNome2').value.trim();
+        if (!nome1 || !nome2) {
+            msg.className = 'edit-msg err';
+            msg.textContent = 'Preencha Nome 1 e Nome 2.';
+            btn.disabled = false;
+            btn.textContent = 'Registrar Entrega';
+            return;
+        }
+        const itens = getAtItens();
+        payload = {
+            tipo: 'ENTREGA',
+            nome1: nome1,
+            nome2: nome2,
+            tipoKit: document.getElementById('atTipoKit').value,
+            iphone: document.getElementById('atIphone').value,
+            android: document.getElementById('atAndroid').value,
+            portSrt: document.getElementById('atPortSrt').value.trim(),
+            tipoChip: document.getElementById('atTipoChip').value,
+            itensConferidos: itens.conferidos.join(', '),
+            itensFaltando: itens.faltando.join(', '),
+            observacao: document.getElementById('atObs').value.trim(),
+            solicitacaoId: s.id,
+            dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        };
+    } else {
+        payload = {
+            acao: 'ATENDER_SOLICITACAO',
+            solicitacaoId: s.id
+        };
+    }
+
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            redirect: 'follow',
+            mode: 'no-cors'
+        });
+    } catch (e) {
+        console.warn('[KitMojo] Erro ao enviar atendimento:', e);
+    }
+
+    // Atualizar local imediatamente
+    solicitacoes[atendendoSolIdx] = {
+        ...s,
+        status: 'Atendida',
+        dataAtendimento: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    };
+
+    msg.className = 'edit-msg ok';
+    msg.textContent = atendenteModoAtual === 'registrar'
+        ? 'Entrega registrada e solicitacao marcada como Atendida!'
+        : 'Solicitacao marcada como Atendida!';
+
+    renderSolicitacoes();
+    setTimeout(() => closeAtenderModal(), 1800);
+}
 
 // ===== INIT =====
 load();
