@@ -179,6 +179,26 @@ function handleSolicitacao(ss, dados) {
 // === HANDLER: ATENDER SOLICITACAO ===
 function handleAtenderSolicitacao(ss, dados) {
   marcarSolicitacaoAtendida(ss, dados.solicitacaoId);
+
+  // Registra entrada minima no KitMojo para aparecer no dashboard como "Em Uso"
+  var sheet = ss.getSheetByName('KitMojo');
+  if (sheet && dados.quem) {
+    var obs = (dados.projeto || '') + (dados.quando ? ' · ' + dados.quando : '');
+    sheet.appendRow([
+      Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd/MM/yyyy, HH:mm:ss'),
+      'ENTREGA',
+      'Confirmado via Solicitacao',
+      dados.quem || '',
+      'KitMojo',
+      '', '', '', '',
+      '', '',
+      obs,
+      '',
+      dados.onde || '',
+      dados.solicitacaoId || ''
+    ]);
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ status: 'ok' }))
     .setMimeType(ContentService.MimeType.JSON);

@@ -3753,7 +3753,11 @@ async function salvarAtendimento() {
     } else {
         payload = {
             acao: 'ATENDER_SOLICITACAO',
-            solicitacaoId: s.id
+            solicitacaoId: s.id,
+            quem: s.quem || '',
+            onde: s.onde || '',
+            quando: s.quando || '',
+            projeto: s.projeto || ''
         };
     }
 
