@@ -546,6 +546,11 @@
             </div>
 
             <div class="form-group">
+                <label for="entrega-local">Local de retirada <span class="obrigatorio">*</span></label>
+                <input type="text" id="entrega-local" placeholder="Ex: Estúdio, Campo, Evento São Paulo..." required>
+            </div>
+
+            <div class="form-group">
                 <label for="entrega-tipoKit">Tipo do KitMojo <span class="obrigatorio">*</span></label>
                 <select id="entrega-tipoKit" required>
                     <option value="" disabled selected>Selecione o tipo</option>
@@ -675,6 +680,11 @@
             <div class="form-group">
                 <label for="devolucao-quemPegou">Nome de quem pegou de volta <span class="obrigatorio">*</span></label>
                 <input type="text" id="devolucao-quemPegou" placeholder="Digite o nome de quem pegou de volta" required>
+            </div>
+
+            <div class="form-group">
+                <label for="devolucao-local">Local de devolução <span class="obrigatorio">*</span></label>
+                <input type="text" id="devolucao-local" placeholder="Ex: Estúdio, Campo, Evento São Paulo..." required>
             </div>
 
             <div class="form-group">
@@ -1188,32 +1198,34 @@
         if (tab === 'entrega') {
             const nome1 = document.getElementById('entrega-quemEntregou').value.trim();
             const nome2 = document.getElementById('entrega-quemRetirou').value.trim();
+            const local = document.getElementById('entrega-local').value.trim();
             const tipo = document.getElementById('entrega-tipoKit').value;
             const portSrt = document.getElementById('entrega-portSrt').value.trim();
             const chip = document.querySelector('input[name="entrega-chip"]:checked');
             const iphone = document.querySelector('input[name="entrega-iphone"]:checked');
             const android = document.querySelector('input[name="entrega-android"]:checked');
             const checks = document.querySelectorAll('#checklist-entrega input:checked').length;
-            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && tipo && portSrt && chip && iphone && android && checks > 0);
+            document.getElementById('btnEnviar-entrega').disabled = !(nome1 && nome2 && local && tipo && portSrt && chip && iphone && android && checks > 0);
         } else {
             const nome1 = document.getElementById('devolucao-quemEstava').value.trim();
             const nome2 = document.getElementById('devolucao-quemPegou').value.trim();
+            const local = document.getElementById('devolucao-local').value.trim();
             const tipo = document.getElementById('devolucao-tipoKit').value;
             const chip = document.querySelector('input[name="devolucao-chip"]:checked');
             const iphone = document.querySelector('input[name="devolucao-iphone"]:checked');
             const android = document.querySelector('input[name="devolucao-android"]:checked');
             const checks = document.querySelectorAll('#checklist-devolucao input:checked').length;
-            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && tipo && chip && iphone && android && checks > 0);
+            document.getElementById('btnEnviar-devolucao').disabled = !(nome1 && nome2 && local && tipo && chip && iphone && android && checks > 0);
         }
     }
 
     // Listeners de validação
-    ['entrega-quemEntregou', 'entrega-quemRetirou', 'entrega-portSrt'].forEach(id => {
+    ['entrega-quemEntregou', 'entrega-quemRetirou', 'entrega-local', 'entrega-portSrt'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => validarFormulario('entrega'));
     });
     document.getElementById('entrega-tipoKit').addEventListener('change', () => validarFormulario('entrega'));
 
-    ['devolucao-quemEstava', 'devolucao-quemPegou'].forEach(id => {
+    ['devolucao-quemEstava', 'devolucao-quemPegou', 'devolucao-local'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => validarFormulario('devolucao'));
     });
     document.getElementById('devolucao-tipoKit').addEventListener('change', () => validarFormulario('devolucao'));
@@ -1248,6 +1260,7 @@
                 tipo: 'ENTREGA',
                 nome1: document.getElementById('entrega-quemEntregou').value.trim(),
                 nome2: document.getElementById('entrega-quemRetirou').value.trim(),
+                local: document.getElementById('entrega-local').value.trim(),
                 tipoKit: document.getElementById('entrega-tipoKit').value,
                 portSrt: document.getElementById('entrega-portSrt').value.trim(),
                 tipoChip: document.querySelector('input[name="entrega-chip"]:checked').value,
@@ -1268,6 +1281,7 @@
                 tipo: 'DEVOLUÇÃO',
                 nome1: document.getElementById('devolucao-quemEstava').value.trim(),
                 nome2: document.getElementById('devolucao-quemPegou').value.trim(),
+                local: document.getElementById('devolucao-local').value.trim(),
                 tipoKit: document.getElementById('devolucao-tipoKit').value,
                 tipoChip: document.querySelector('input[name="devolucao-chip"]:checked').value,
                 iphone: document.querySelector('input[name="devolucao-iphone"]:checked').value,

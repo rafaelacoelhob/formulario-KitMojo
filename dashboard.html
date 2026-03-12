@@ -1052,6 +1052,12 @@
                     <select id="edTipoChip"><option value="">-</option><option value="Fisico">Fisico</option><option value="eSIM">eSIM</option></select>
                 </div>
                 <div class="modal-field">
+                    <label>Local</label>
+                    <input type="text" id="edLocal" placeholder="Local de retirada/devolucao">
+                </div>
+            </div>
+            <div class="modal-row full">
+                <div class="modal-field">
                     <label>Observacao</label>
                     <input type="text" id="edObs">
                 </div>
@@ -1160,6 +1166,12 @@
                             <option value="eSIM">eSIM</option>
                         </select>
                     </div>
+                    <div class="modal-field">
+                        <label>Local de retirada <span style="color:var(--red)">*</span></label>
+                        <input type="text" id="atLocal" placeholder="Ex: Estúdio, Campo, Evento...">
+                    </div>
+                </div>
+                <div class="modal-row full">
                     <div class="modal-field">
                         <label>Observacao</label>
                         <input type="text" id="atObs" placeholder="Opcional">
@@ -1530,7 +1542,7 @@
         <div class="tbl-wrap">
             <table>
                 <thead><tr>
-                    <th>Data/Hora</th><th>Tipo</th><th>Nome 1</th><th>Nome 2</th>
+                    <th>Data/Hora</th><th>Tipo</th><th>Nome 1</th><th>Nome 2</th><th>Local</th>
                     <th>Tipo Kit</th><th>iPhone</th><th>Android</th><th>Port SRT</th><th>Chip</th>
                     <th>Itens OK</th><th>Itens Faltando</th><th>Obs</th><th></th>
                 </tr></thead>
@@ -1748,7 +1760,7 @@ function parseCSV(csv) {
 
 function rowToRegistro(row) {
     // Mapeia colunas para objeto do dashboard
-    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Tipo Chip | Itens Conferidos | Itens Faltando | Observação | Foto (URL)
+    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Tipo Chip | Itens Conferidos | Itens Faltando | Observação | Foto (URL) | Local
     return {
         dataHora:        (row[0] || '').trim(),
         tipo:            (row[1] || '').trim().toUpperCase(),
@@ -1762,7 +1774,8 @@ function rowToRegistro(row) {
         itensConferidos: (row[9] || '').trim(),
         itensFaltando:   (row[10] || '').trim(),
         observacao:      (row[11] || '').trim(),
-        fotoUrl:         (row[12] || '').trim()
+        fotoUrl:         (row[12] || '').trim(),
+        local:           (row[13] || '').trim()
     };
 }
 
@@ -2733,6 +2746,7 @@ function renderConferencia() {
                         <div class="conf-side-title"><span class="badge b-ent">SAIDA</span> Entrega</div>
                         <div class="conf-side-row"><span class="lbl">Entregue por</span><span>${ent.nome1}</span></div>
                         <div class="conf-side-row"><span class="lbl">Retirado por</span><span>${ent.nome2}</span></div>
+                        ${ent.local ? `<div class="conf-side-row"><span class="lbl">Local</span><span style="color:var(--blue);font-weight:600">${ent.local}</span></div>` : ''}
                         <div class="conf-side-row"><span class="lbl">Data</span><span>${ent.dataHora}</span></div>
                         <div class="conf-side-row"><span class="lbl">Tipo</span><span>${ent.tipoKit}</span></div>
                         ${ent.portSrt ? `<div class="conf-side-row"><span class="lbl">Port SRT</span><span style="color:var(--cyan);font-weight:600">${ent.portSrt}</span></div>` : ''}
@@ -2748,6 +2762,7 @@ function renderConferencia() {
                             return `
                             <div class="conf-side-row"><span class="lbl">Devolvido por</span><span>${dev.nome1}</span></div>
                             <div class="conf-side-row"><span class="lbl">Recebido por</span><span>${dev.nome2}</span></div>
+                            ${dev.local ? `<div class="conf-side-row"><span class="lbl">Local</span><span style="color:var(--blue);font-weight:600">${dev.local}</span></div>` : ''}
                             <div class="conf-side-row"><span class="lbl">Data</span><span>${dev.dataHora}</span></div>
                             <div class="conf-side-row"><span class="lbl">Tipo</span><span>${dev.tipoKit}</span></div>
                             <div class="conf-side-row"><span class="lbl">Itens OK</span><span style="color:var(--green)">${devConfCount}/${ITENS.length}</span></div>
@@ -2797,6 +2812,7 @@ function renderHist() {
                 <td>${r.dataHora || '-'}</td>
                 <td><span class="badge ${r.tipo === 'ENTREGA' ? 'b-ent' : 'b-dev'}">${r.tipo}</span></td>
                 <td>${r.nome1 || '-'}</td><td>${r.nome2 || '-'}</td>
+                <td style="font-weight:600;color:var(--blue)">${r.local || '-'}</td>
                 <td>${r.tipoKit || '-'}</td><td>${r.iphone || '-'}</td><td>${r.android || '-'}</td>
                 <td style="color:var(--cyan);font-weight:600">${r.portSrt || '-'}</td>
                 <td>${chipBadge}</td>
@@ -2851,8 +2867,8 @@ function renderTL() {
 // ===== EXPORTAR CSV =====
 function exportCSV() {
     if (!filtered.length) return;
-    const h = ['Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo Kit', 'iPhone', 'Android', 'Port SRT', 'Tipo Chip', 'Itens Conferidos', 'Itens Faltando', 'Observação'];
-    const rows = filtered.map(r => [r.dataHora, r.tipo, r.nome1, r.nome2, r.tipoKit, r.iphone, r.android, r.portSrt || '', r.tipoChip || '', '"' + (r.itensConferidos || '') + '"', '"' + (r.itensFaltando || '') + '"', '"' + (r.observacao || '') + '"']);
+    const h = ['Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Local', 'Tipo Kit', 'iPhone', 'Android', 'Port SRT', 'Tipo Chip', 'Itens Conferidos', 'Itens Faltando', 'Observação'];
+    const rows = filtered.map(r => [r.dataHora, r.tipo, r.nome1, r.nome2, r.local || '', r.tipoKit, r.iphone, r.android, r.portSrt || '', r.tipoChip || '', '"' + (r.itensConferidos || '') + '"', '"' + (r.itensFaltando || '') + '"', '"' + (r.observacao || '') + '"']);
     const csv = '\uFEFF' + [h.join(';'), ...rows.map(r => r.join(';'))].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -3145,6 +3161,7 @@ function openEditModal(idx) {
     document.getElementById('edAndroid').value = r.android || '';
     document.getElementById('edPortSrt').value = r.portSrt || '';
     document.getElementById('edTipoChip').value = r.tipoChip || '';
+    document.getElementById('edLocal').value = r.local || '';
     document.getElementById('edObs').value = r.observacao || '';
 
     const confList = r.itensConferidos ? r.itensConferidos.split(',').map(i => i.trim()).filter(Boolean) : [];
@@ -3226,6 +3243,7 @@ async function saveEdit() {
         android: document.getElementById('edAndroid').value,
         portSrt: document.getElementById('edPortSrt').value,
         tipoChip: document.getElementById('edTipoChip').value,
+        local: document.getElementById('edLocal').value,
         itensConferidos: itens.conferidos.join(', '),
         itensFaltando: itens.faltando.join(', '),
         observacao: document.getElementById('edObs').value
@@ -3243,6 +3261,7 @@ async function saveEdit() {
         android: editData.android,
         portSrt: editData.portSrt,
         tipoChip: editData.tipoChip,
+        local: editData.local,
         itensConferidos: editData.itensConferidos,
         itensFaltando: editData.itensFaltando,
         observacao: editData.observacao
@@ -3456,6 +3475,7 @@ function openAtenderModal(idx) {
     document.getElementById('atNome2').value = s.quem || '';
     document.getElementById('atNome1').value = '';
     document.getElementById('atPortSrt').value = '';
+    document.getElementById('atLocal').value = '';
     document.getElementById('atObs').value = '';
     document.getElementById('atTipoKit').value = 'LiveMode';
     document.getElementById('atIphone').value = 'iPhone 15 Pro';
@@ -3545,9 +3565,10 @@ async function salvarAtendimento() {
     if (atendenteModoAtual === 'registrar') {
         const nome1 = document.getElementById('atNome1').value.trim();
         const nome2 = document.getElementById('atNome2').value.trim();
-        if (!nome1 || !nome2) {
+        const local = document.getElementById('atLocal').value.trim();
+        if (!nome1 || !nome2 || !local) {
             msg.className = 'edit-msg err';
-            msg.textContent = 'Preencha Nome 1 e Nome 2.';
+            msg.textContent = 'Preencha Nome 1, Nome 2 e Local.';
             btn.disabled = false;
             btn.textContent = 'Registrar Entrega';
             return;
@@ -3557,6 +3578,7 @@ async function salvarAtendimento() {
             tipo: 'ENTREGA',
             nome1: nome1,
             nome2: nome2,
+            local: local,
             tipoKit: document.getElementById('atTipoKit').value,
             iphone: document.getElementById('atIphone').value,
             android: document.getElementById('atAndroid').value,

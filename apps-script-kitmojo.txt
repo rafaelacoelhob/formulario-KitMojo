@@ -39,9 +39,9 @@ function handleKitMojo(ss, dados) {
     sheet.appendRow([
       'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
       'Modelo iPhone', 'Modelo Android', 'Port SRT', 'Tipo Chip',
-      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)'
+      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)', 'Local'
     ]);
-    var headerRange = sheet.getRange(1, 1, 1, 13);
+    var headerRange = sheet.getRange(1, 1, 1, 14);
     headerRange.setFontWeight('bold');
     headerRange.setBackground('#1a1a2e');
     headerRange.setFontColor('#ffffff');
@@ -76,7 +76,8 @@ function handleKitMojo(ss, dados) {
     dados.itensConferidos || '',
     dados.itensFaltando || '',
     dados.observacao || '',
-    fotoUrl
+    fotoUrl,
+    dados.local || ''
   ]);
 
   // Se for entrega e tiver solicitacaoId, marcar como atendida
