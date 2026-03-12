@@ -1749,6 +1749,7 @@ function calcKitStatus() {
                 portSrt: r.portSrt || '', tipoChip: r.tipoChip || '',
                 comQuem: r.nome2, entregaPor: r.nome1,
                 dtEntrega: r.dataHora,
+                localEntrega: r.local || '',
                 conf: r.itensConferidos, falt: r.itensFaltando,
                 obs: r.observacao,
                 historico: (kits[key]?.historico || 0) + 1,
@@ -1761,6 +1762,7 @@ function calcKitStatus() {
             kits[key].recPor = r.nome2;
             kits[key].confDev = r.itensConferidos;
             kits[key].faltDev = r.itensFaltando;
+            kits[key].localDevolucao = r.local || '';
             kits[key].historico = (kits[key].historico || 0) + 1;
         }
     });
@@ -2117,6 +2119,10 @@ function renderOverview() {
                             <span class="lbl">Saiu em</span>
                             <span class="val">${kit.dtEntrega}</span>
                         </div>
+                        ${kit.localEntrega ? `<div class="ov-kit-row">
+                            <span class="lbl">Local</span>
+                            <span class="val" style="color:var(--blue);font-weight:600">${kit.localEntrega}</span>
+                        </div>` : ''}
                     ` : `
                         <div class="ov-kit-row">
                             <span class="lbl">Devolvido por</span>
@@ -2130,6 +2136,14 @@ function renderOverview() {
                             <span class="lbl">Devolvido em</span>
                             <span class="val">${kit.dtDevolucao || '-'}</span>
                         </div>
+                        ${kit.localDevolucao ? `<div class="ov-kit-row">
+                            <span class="lbl">Local dev.</span>
+                            <span class="val" style="color:var(--blue);font-weight:600">${kit.localDevolucao}</span>
+                        </div>` : ''}
+                        ${kit.localEntrega ? `<div class="ov-kit-row">
+                            <span class="lbl">Local retirada</span>
+                            <span class="val" style="color:var(--text2)">${kit.localEntrega}</span>
+                        </div>` : ''}
                     `}
                     <div class="ov-kit-row">
                         <span class="lbl">Movimentacoes</span>
@@ -2369,7 +2383,12 @@ function renderKits() {
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Com quem' : 'Devolvido por'}</span><span style="${foiTransferido ? 'color:var(--purple);font-weight:600' : ''}">${emUso ? v.comQuem : (v.devPor || '-')}</span></div>
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Entregue por' : 'Recebido por'}</span><span>${emUso ? v.entregaPor : (v.recPor || '-')}</span></div>
             <div class="kit-row"><span class="kit-row-l">${emUso ? 'Data entrega' : 'Data devolucao'}</span><span>${emUso ? v.dtEntrega : (v.dtDevolucao || '-')}</span></div>
-            ${emUso ? `<div class="kit-row"><span class="kit-row-l">Tempo fora</span><span style="color:var(--yellow);font-weight:600">${tempoDesde(v.dtEntrega)}</span></div>` : ''}
+            ${emUso
+                ? `${v.localEntrega ? `<div class="kit-row"><span class="kit-row-l">Local</span><span style="color:var(--blue);font-weight:600">${v.localEntrega}</span></div>` : ''}
+                   <div class="kit-row"><span class="kit-row-l">Tempo fora</span><span style="color:var(--yellow);font-weight:600">${tempoDesde(v.dtEntrega)}</span></div>`
+                : `${v.localDevolucao ? `<div class="kit-row"><span class="kit-row-l">Local dev.</span><span style="color:var(--blue);font-weight:600">${v.localDevolucao}</span></div>` : ''}
+                   ${v.localEntrega ? `<div class="kit-row"><span class="kit-row-l">Local retirada</span><span style="color:var(--text2)">${v.localEntrega}</span></div>` : ''}`
+            }
             ${cadeiaHTML}
             ${faltaRef?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${faltaRef}</span></div>` : ''}
             ${v.obs ? `<div class="kit-row"><span class="kit-row-l">Obs</span><span style="font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.obs}</span></div>` : ''}
