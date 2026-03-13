@@ -200,6 +200,67 @@
             line-height: 1.3;
         }
 
+        /* Cards de kit disponível */
+        .kits-disponiveis {
+            padding: 16px 24px 4px;
+            border-bottom: 1px solid #e8e8e8;
+            margin-bottom: 4px;
+        }
+        .kits-disponiveis-titulo {
+            font-size: 12px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .kits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .kit-card-sel {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: #fff;
+            text-align: left;
+        }
+        .kit-card-sel:hover { border-color: #1a73e8; background: #f0f6ff; }
+        .kit-card-sel.selecionado { border-color: #1a73e8; background: #e8f0fe; }
+        .kit-card-sel.em-uso {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+        .kit-card-sel .kc-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .kit-card-sel.em-uso .kc-badge { background: #ffebee; color: #e53935; }
+        .kit-card-sel:not(.em-uso) .kc-badge { background: #e8f5e9; color: #2e7d32; }
+        .kit-card-sel .kc-nome {
+            font-size: 12px;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.3;
+        }
+        .kit-card-sel .kc-detalhe {
+            font-size: 11px;
+            color: #777;
+            margin-top: 3px;
+            line-height: 1.3;
+        }
+        .kits-loading-txt { font-size: 12px; color: #aaa; }
+
         /* Seção iPhone */
         .iphone-section {
             margin-bottom: 20px;
@@ -525,6 +586,13 @@
 
     <!-- ==================== ABA ENTREGA ==================== -->
     <div class="tab-content active" id="tab-entrega">
+        <!-- Seletor de kit disponível -->
+        <div class="kits-disponiveis">
+            <div class="kits-disponiveis-titulo">Selecione um kit disponivel</div>
+            <div class="kits-grid" id="kitsGrid">
+                <span class="kits-loading-txt">Carregando...</span>
+            </div>
+        </div>
         <form id="formEntrega" onsubmit="enviarForm(event, 'entrega')">
             <!-- Vincular a solicitacao -->
             <div class="form-group">
@@ -900,6 +968,116 @@
         return new Date(str).getTime() || 0;
     }
 
+    // ===== CARDS DE KITS DISPONÍVEIS (aba Entrega) =====
+    function carregarKitsDisponiveis() {
+        const cbName = '_kitmojoKitsCb_' + Date.now();
+        window[cbName] = function(resp) {
+            try {
+                const registros = resp.table.rows.map(r => {
+                    const vals = r.c.map(c => c ? (c.v != null ? String(c.v) : '') : '');
+                    return { dataHora: vals[0], tipo: vals[1], nome1: vals[2], nome2: vals[3], tipoKit: vals[4], iphone: vals[5], android: vals[6], portSrt: vals[7], tipoChip: vals[8] };
+                }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+
+                registros.sort((a, b) => parseDataHora(a.dataHora) - parseDataHora(b.dataHora));
+
+                // Estado atual de cada kit físico (tipoKit+iphone+android)
+                const kitMap = new Map();
+                registros.forEach(r => {
+                    const key = `${r.tipoKit}|${r.iphone}|${r.android}`;
+                    if (r.tipo === 'ENTREGA') {
+                        kitMap.set(key, { emUso: true, pessoa: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, tipoChip: r.tipoChip, portSrt: r.portSrt });
+                    } else if (r.tipo === 'DEVOLUÇÃO') {
+                        const prev = kitMap.get(key) || {};
+                        kitMap.set(key, { emUso: false, pessoa: '', tipoKit: r.tipoKit || prev.tipoKit, iphone: r.iphone || prev.iphone, android: r.android || prev.android, tipoChip: r.tipoChip || prev.tipoChip, portSrt: r.portSrt || prev.portSrt });
+                    }
+                });
+
+                const kits = [...kitMap.values()].sort((a, b) => (a.emUso ? 1 : 0) - (b.emUso ? 1 : 0));
+                renderKitsGrid(kits);
+            } catch(e) {
+                document.getElementById('kitsGrid').innerHTML = '<span class="kits-loading-txt">Nao foi possivel carregar.</span>';
+            }
+            delete window[cbName];
+            const s = document.getElementById('script_' + cbName);
+            if (s) s.remove();
+        };
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${SHEET_GID}`;
+        const script = document.createElement('script');
+        script.id = 'script_' + cbName;
+        script.src = url;
+        script.onerror = () => {
+            document.getElementById('kitsGrid').innerHTML = '<span class="kits-loading-txt">Nao foi possivel carregar.</span>';
+            delete window[cbName];
+        };
+        document.body.appendChild(script);
+    }
+
+    function renderKitsGrid(kits) {
+        const grid = document.getElementById('kitsGrid');
+        if (!kits.length) { grid.innerHTML = '<span class="kits-loading-txt">Nenhum kit encontrado.</span>'; return; }
+        grid.innerHTML = kits.map((k, i) => {
+            const emUso = k.emUso;
+            const badge = emUso ? 'Em uso' : 'Disponivel';
+            const nome = [k.tipoKit, k.iphone, k.android].filter(Boolean).join(' · ');
+            const detalhe = emUso ? `Com: ${k.pessoa}` : 'Livre';
+            return `<div class="kit-card-sel${emUso ? ' em-uso' : ''}" onclick="${emUso ? '' : 'selecionarKitCard(this,' + i + ')'}" data-idx="${i}">
+                <span class="kc-badge">${badge}</span>
+                <div class="kc-nome">${nome}</div>
+                <div class="kc-detalhe">${detalhe}</div>
+            </div>`;
+        }).join('');
+        // Guardar dados dos kits para uso no preenchimento
+        grid._kits = kits;
+    }
+
+    function selecionarKitCard(el, idx) {
+        // Destacar card selecionado
+        document.querySelectorAll('#kitsGrid .kit-card-sel').forEach(c => c.classList.remove('selecionado'));
+        el.classList.add('selecionado');
+
+        const kit = document.getElementById('kitsGrid')._kits[idx];
+        if (!kit) return;
+
+        // Preencher tipoKit
+        const selTipo = document.getElementById('entrega-tipoKit');
+        selTipo.value = kit.tipoKit;
+
+        // Preencher chip
+        if (kit.tipoChip) {
+            document.querySelectorAll('input[name="entrega-chip"]').forEach(r => {
+                r.closest('.iphone-option').classList.remove('selected');
+                if (r.value === kit.tipoChip) {
+                    r.checked = true;
+                    r.closest('.iphone-option').classList.add('selected');
+                }
+            });
+        }
+
+        // Preencher iphone
+        if (kit.iphone) {
+            document.querySelectorAll('input[name="entrega-iphone"]').forEach(r => {
+                r.closest('.iphone-option').classList.remove('selected');
+                if (r.value === kit.iphone) {
+                    r.checked = true;
+                    r.closest('.iphone-option').classList.add('selected');
+                }
+            });
+        }
+
+        // Preencher android
+        if (kit.android) {
+            document.querySelectorAll('input[name="entrega-android"]').forEach(r => {
+                r.closest('.iphone-option').classList.remove('selected');
+                if (r.value === kit.android) {
+                    r.checked = true;
+                    r.closest('.iphone-option').classList.add('selected');
+                }
+            });
+        }
+
+        validarFormulario('entrega');
+    }
+
     function carregarEntregasViaJSONP() {
         return new Promise((resolve) => {
             const cbName = '_kitmojoEntregasCb_' + Date.now();
@@ -994,6 +1172,7 @@
     }
 
     carregarEntregasViaJSONP();
+    carregarKitsDisponiveis();
 
     // Lista de itens do checklist
     const itensKit = [
