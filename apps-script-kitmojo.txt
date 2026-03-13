@@ -67,6 +67,8 @@ function handleEditRegistro(ss, dados) {
       // col 13 = Foto (URL) — nao altera
       sheet.getRange(i + 1, 14).setValue(dados.local !== undefined ? dados.local : (data[i][13] || ''));
       // col 15 = SolicitacaoID — nao altera durante edicao
+      sheet.getRange(i + 1, 16).setValue(dados.numeroIphone !== undefined ? dados.numeroIphone : (data[i][15] || ''));
+      sheet.getRange(i + 1, 17).setValue(dados.numeroAndroid !== undefined ? dados.numeroAndroid : (data[i][16] || ''));
       found = true;
       break;
     }
@@ -86,9 +88,10 @@ function handleKitMojo(ss, dados) {
     sheet.appendRow([
       'Data/Hora', 'Tipo', 'Nome 1', 'Nome 2', 'Tipo KitMojo',
       'Modelo iPhone', 'Modelo Android', 'Port SRT', 'Tipo Chip',
-      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)', 'Local', 'SolicitacaoID'
+      'Itens Conferidos', 'Itens Faltando', 'Observacao', 'Foto (URL)', 'Local', 'SolicitacaoID',
+      'Numero iPhone', 'Numero Android'
     ]);
-    var headerRange = sheet.getRange(1, 1, 1, 15);
+    var headerRange = sheet.getRange(1, 1, 1, 17);
     headerRange.setFontWeight('bold');
     headerRange.setBackground('#1a1a2e');
     headerRange.setFontColor('#ffffff');
@@ -125,7 +128,9 @@ function handleKitMojo(ss, dados) {
     dados.observacao || '',
     fotoUrl,
     dados.local || '',
-    dados.solicitacaoId || ''
+    dados.solicitacaoId || '',
+    dados.numeroIphone || '',
+    dados.numeroAndroid || ''
   ]);
 
   if (dados.tipo === 'ENTREGA' && dados.solicitacaoId) {

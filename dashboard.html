@@ -1751,6 +1751,8 @@ function calcKitStatus() {
                 dtEntrega: r.dataHora,
                 localEntrega: r.local || '',
                 solicitacaoId: r.solicitacaoId || '',
+                numeroIphone: r.numeroIphone || '',
+                numeroAndroid: r.numeroAndroid || '',
                 conf: r.itensConferidos, falt: r.itensFaltando,
                 obs: r.observacao,
                 historico: (kits[key]?.historico || 0) + 1,
@@ -1764,6 +1766,8 @@ function calcKitStatus() {
             kits[key].confDev = r.itensConferidos;
             kits[key].faltDev = r.itensFaltando;
             kits[key].localDevolucao = r.local || '';
+            if (r.numeroIphone) kits[key].numeroIphone = r.numeroIphone;
+            if (r.numeroAndroid) kits[key].numeroAndroid = r.numeroAndroid;
             kits[key].historico = (kits[key].historico || 0) + 1;
         }
     });
@@ -1872,7 +1876,7 @@ function parseCSV(csv) {
 
 function rowToRegistro(row) {
     // Mapeia colunas para objeto do dashboard
-    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Tipo Chip | Itens Conferidos | Itens Faltando | Observação | Foto (URL) | Local | SolicitacaoID
+    // Colunas: Data/Hora | Tipo | Nome 1 | Nome 2 | Tipo KitMojo | Modelo iPhone | Modelo Android | Port SRT | Tipo Chip | Itens Conferidos | Itens Faltando | Observação | Foto (URL) | Local | SolicitacaoID | Numero iPhone | Numero Android
     return {
         dataHora:        (row[0] || '').trim(),
         tipo:            (row[1] || '').trim().toUpperCase(),
@@ -1888,7 +1892,9 @@ function rowToRegistro(row) {
         observacao:      (row[11] || '').trim(),
         fotoUrl:         (row[12] || '').trim(),
         local:           (row[13] || '').trim(),
-        solicitacaoId:   (row[14] || '').trim()
+        solicitacaoId:   (row[14] || '').trim(),
+        numeroIphone:    (row[15] || '').trim(),
+        numeroAndroid:   (row[16] || '').trim()
     };
 }
 
@@ -2141,11 +2147,11 @@ function renderOverview() {
                 <div class="ov-kit-phones">
                     <div class="ov-phone">
                         <span class="ph-ico"></span>
-                        <div><div style="font-size:10px;color:var(--text2)">iPhone</div><strong>${kit.iphone || '-'}</strong></div>
+                        <div><div style="font-size:10px;color:var(--text2)">iPhone</div><strong>${kit.iphone || '-'}</strong>${kit.numeroIphone ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">${kit.numeroIphone}</div>` : ''}</div>
                     </div>
                     <div class="ov-phone">
                         <span class="ph-ico"></span>
-                        <div><div style="font-size:10px;color:var(--text2)">Android</div><strong>${kit.android || '-'}</strong></div>
+                        <div><div style="font-size:10px;color:var(--text2)">Android</div><strong>${kit.android || '-'}</strong>${kit.numeroAndroid ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">${kit.numeroAndroid}</div>` : ''}</div>
                     </div>
                 </div>
 
@@ -2444,6 +2450,8 @@ function renderKits() {
                    ${v.localEntrega ? `<div class="kit-row"><span class="kit-row-l">Local retirada</span><span style="color:var(--text2)">${v.localEntrega}</span></div>` : ''}`
             }
             ${cadeiaHTML}
+            ${v.numeroIphone ? `<div class="kit-row"><span class="kit-row-l">Num. iPhone</span><span style="font-size:12px;font-family:monospace">${v.numeroIphone}</span></div>` : ''}
+            ${v.numeroAndroid ? `<div class="kit-row"><span class="kit-row-l">Num. Android</span><span style="font-size:12px;font-family:monospace">${v.numeroAndroid}</span></div>` : ''}
             ${faltaRef?.trim() ? `<div class="kit-row"><span class="kit-row-l" style="color:var(--red)">Faltando</span><span style="color:var(--red);font-size:12px;max-width:200px;text-align:right;white-space:normal">${faltaRef}</span></div>` : ''}
             ${v.obs ? `<div class="kit-row"><span class="kit-row-l">Obs</span><span style="font-size:12px;max-width:200px;text-align:right;white-space:normal">${v.obs}</span></div>` : ''}
             ${isSol
