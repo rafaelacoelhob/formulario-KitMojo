@@ -180,10 +180,94 @@
             min-height: 20px;
         }
 
+        /* Status dos Kits */
+        .kits-section {
+            padding: 0 24px 20px;
+            border-bottom: 2px solid #f0f2f5;
+            margin-bottom: 4px;
+        }
+
+        .kits-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .kit-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .kit-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .kit-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .kit-status-dot.disponivel { background: #2e7d32; }
+        .kit-status-dot.em-uso { background: #e53935; }
+        .kit-status-dot.carregando { background: #bbb; }
+
+        .kit-info { flex: 1; min-width: 0; }
+
+        .kit-nome {
+            font-size: 13px;
+            font-weight: 600;
+            color: #222;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kit-detalhe {
+            font-size: 12px;
+            color: #777;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kit-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 20px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .kit-badge.disponivel { background: #e8f5e9; color: #2e7d32; }
+        .kit-badge.em-uso { background: #ffebee; color: #e53935; }
+
+        .kits-loading {
+            font-size: 13px;
+            color: #999;
+            text-align: center;
+            padding: 8px 0;
+        }
+
         @media (max-width: 600px) {
             body { padding: 10px; }
             .header { padding: 24px 16px; }
             .form-body { padding: 16px; }
+            .kits-section { padding: 0 16px 16px; }
         }
     </style>
 </head>
@@ -193,6 +277,14 @@
     <div class="header">
         <h1>Solicitar KitMojo</h1>
         <p>Preencha os dados para solicitar um kit</p>
+    </div>
+
+    <!-- Status dos Kits -->
+    <div class="kits-section">
+        <h3>Disponibilidade dos Kits</h3>
+        <div class="kit-cards" id="kitCards">
+            <div class="kits-loading">Carregando status dos kits...</div>
+        </div>
     </div>
 
     <div class="form-body">
@@ -251,6 +343,112 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBn5uhzkpadbuEbY2K2BYeJBVjM8B8MKIzpxaoXPpba1VYxAbt6W6RWx4iMx_51E6YVw/exec';
+    const SHEET_ID = '1ggGHnB1zleQPff-AGj2OAei_bUnaZsO8KLiFnzGyrI0';
+    const SHEET_GID = '1349869099';
+
+    function parseDataHora(str) {
+        if (!str) return 0;
+        str = String(str).trim();
+        const gviz = str.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+        if (gviz) return new Date(+gviz[1], +gviz[2], +gviz[3], +(gviz[4]||0), +(gviz[5]||0), +(gviz[6]||0)).getTime();
+        const pt = str.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[,\s]+(\d{2}):(\d{2}):(\d{2}))?/);
+        if (pt) return new Date(+pt[3], +pt[2]-1, +pt[1], +(pt[4]||0), +(pt[5]||0), +(pt[6]||0)).getTime();
+        return new Date(str).getTime() || 0;
+    }
+
+    function fmtDataSimples(str) {
+        if (!str) return '';
+        str = String(str).trim();
+        const gviz = str.match(/^Date\((\d+),(\d+),(\d+)/);
+        if (gviz) {
+            const d = new Date(+gviz[1], +gviz[2], +gviz[3]);
+            return d.toLocaleDateString('pt-BR');
+        }
+        if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str.slice(0, 10);
+        return str;
+    }
+
+    function carregarStatusKits() {
+        const cbName = '_kitmojoStatusCb_' + Date.now();
+        window[cbName] = function(resp) {
+            try {
+                const rows = resp.table.rows;
+                const registros = rows.map(r => {
+                    const vals = r.c.map(c => c ? (c.v != null ? String(c.v) : '') : '');
+                    return {
+                        dataHora: vals[0],
+                        tipo: vals[1],
+                        nome1: vals[2],
+                        nome2: vals[3],
+                        tipoKit: vals[4],
+                        iphone: vals[5],
+                        android: vals[6]
+                    };
+                }).filter(r => r.tipo === 'ENTREGA' || r.tipo === 'DEVOLUÇÃO');
+
+                registros.sort((a, b) => parseDataHora(a.dataHora) - parseDataHora(b.dataHora));
+
+                // Para cada kit (tipoKit+iphone+android), rastrear estado atual e último usuário
+                const kitState = new Map(); // kitKey -> { emUso: bool, pessoa: string, dataHora: string, ultimoUsuario: string }
+                registros.forEach(r => {
+                    const kitKey = `${r.tipoKit}|${r.iphone}|${r.android}`;
+                    if (r.tipo === 'ENTREGA') {
+                        const prev = kitState.get(kitKey) || {};
+                        kitState.set(kitKey, { emUso: true, pessoa: r.nome2, dataHora: r.dataHora, ultimoUsuario: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android });
+                    } else if (r.tipo === 'DEVOLUÇÃO') {
+                        const prev = kitState.get(kitKey) || {};
+                        kitState.set(kitKey, { emUso: false, pessoa: '', dataHora: r.dataHora, ultimoUsuario: r.nome1 || prev.ultimoUsuario || '', tipoKit: r.tipoKit || prev.tipoKit, iphone: r.iphone || prev.iphone, android: r.android || prev.android });
+                    }
+                });
+
+                renderKitCards([...kitState.values()]);
+            } catch(e) {
+                document.getElementById('kitCards').innerHTML = '<div class="kits-loading">Não foi possível carregar o status dos kits.</div>';
+            }
+            delete window[cbName];
+            const s = document.getElementById('script_' + cbName);
+            if (s) s.remove();
+        };
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=${SHEET_GID}`;
+        const script = document.createElement('script');
+        script.id = 'script_' + cbName;
+        script.src = url;
+        script.onerror = () => {
+            document.getElementById('kitCards').innerHTML = '<div class="kits-loading">Não foi possível carregar o status dos kits.</div>';
+            delete window[cbName];
+        };
+        document.body.appendChild(script);
+    }
+
+    function renderKitCards(kits) {
+        const container = document.getElementById('kitCards');
+        if (!kits.length) {
+            container.innerHTML = '<div class="kits-loading">Nenhum kit encontrado.</div>';
+            return;
+        }
+        // Ordenar: disponíveis primeiro, depois em uso
+        kits.sort((a, b) => (a.emUso ? 1 : 0) - (b.emUso ? 1 : 0));
+        container.innerHTML = kits.map(k => {
+            const status = k.emUso ? 'em-uso' : 'disponivel';
+            const badgeLabel = k.emUso ? 'Em uso' : 'Disponível';
+            const nome = [k.tipoKit, k.iphone, k.android].filter(Boolean).join(' · ');
+            const detalhe = k.emUso
+                ? `Com: ${k.pessoa}`
+                : k.ultimoUsuario
+                    ? `Último: ${k.ultimoUsuario}`
+                    : 'Sem uso anterior';
+            return `<div class="kit-card">
+                <div class="kit-status-dot ${status}"></div>
+                <div class="kit-info">
+                    <div class="kit-nome">${nome}</div>
+                    <div class="kit-detalhe">${detalhe}</div>
+                </div>
+                <span class="kit-badge ${status}">${badgeLabel}</span>
+            </div>`;
+        }).join('');
+    }
+
+    carregarStatusKits();
 
     // Validacao
     function validar() {

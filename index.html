@@ -885,6 +885,21 @@
     const SHEET_GID = '1349869099';
     let entregasAtivas = [];
 
+    // Converte dataHora (formato gviz "Date(Y,M,D,h,m,s)" ou pt-BR "DD/MM/YYYY, HH:MM:SS") para timestamp numérico
+    function parseDataHora(str) {
+        if (!str) return 0;
+        str = String(str).trim();
+        const gviz = str.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+        if (gviz) {
+            return new Date(+gviz[1], +gviz[2], +gviz[3], +(gviz[4]||0), +(gviz[5]||0), +(gviz[6]||0)).getTime();
+        }
+        const pt = str.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[,\s]+(\d{2}):(\d{2}):(\d{2}))?/);
+        if (pt) {
+            return new Date(+pt[3], +pt[2]-1, +pt[1], +(pt[4]||0), +(pt[5]||0), +(pt[6]||0)).getTime();
+        }
+        return new Date(str).getTime() || 0;
+    }
+
     function carregarEntregasViaJSONP() {
         return new Promise((resolve) => {
             const cbName = '_kitmojoEntregasCb_' + Date.now();
@@ -910,14 +925,22 @@
                         };
                     });
 
-                    // Filtrar entregas e devoluções
-                    const entregas = registros.filter(r => r.tipo === 'ENTREGA');
-                    const devolucoes = registros.filter(r => r.tipo === 'DEVOLUÇÃO');
+                    // Processar em ordem cronológica para matching correto
+                    registros.sort((a, b) => parseDataHora(a.dataHora) - parseDataHora(b.dataHora));
 
-                    // Uma entrega é ativa se não tem devolução correspondente (mesmo nome2 = quem retirou)
-                    entregasAtivas = entregas.filter(ent => {
-                        return !devolucoes.some(dev => dev.nome1 === ent.nome2 && dev.tipoKit === ent.tipoKit);
+                    // Matching sequencial: cada ENTREGA abre um slot, cada DEVOLUÇÃO fecha o slot correspondente
+                    // Chave: pessoa + tipoKit + iphone + android (identifica o kit específico com quem está)
+                    const ativasMap = new Map();
+                    registros.forEach(r => {
+                        if (r.tipo === 'ENTREGA') {
+                            const key = `${r.nome2}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                            ativasMap.set(key, r);
+                        } else if (r.tipo === 'DEVOLUÇÃO') {
+                            const key = `${r.nome1}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                            ativasMap.delete(key);
+                        }
                     });
+                    entregasAtivas = [...ativasMap.values()];
 
                     montarDropdownEntregas();
                 } catch(e) {
