@@ -983,12 +983,12 @@
                 // Estado atual de cada kit físico (tipoKit+iphone+android)
                 const kitMap = new Map();
                 registros.forEach(r => {
-                    const key = `${r.tipoKit}|${r.iphone}|${r.android}`;
+                    const key = `${r.portSrt}|${r.tipoKit}|${r.iphone}|${r.android}`;
                     if (r.tipo === 'ENTREGA') {
-                        kitMap.set(key, { emUso: true, pessoa: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, tipoChip: r.tipoChip, portSrt: r.portSrt });
+                        kitMap.set(key, { emUso: true, comQuem: r.nome2, ultimoUsuario: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, tipoChip: r.tipoChip, portSrt: r.portSrt });
                     } else if (r.tipo === 'DEVOLUÇÃO') {
                         const prev = kitMap.get(key) || {};
-                        kitMap.set(key, { emUso: false, pessoa: '', tipoKit: r.tipoKit || prev.tipoKit, iphone: r.iphone || prev.iphone, android: r.android || prev.android, tipoChip: r.tipoChip || prev.tipoChip, portSrt: r.portSrt || prev.portSrt });
+                        kitMap.set(key, { emUso: false, comQuem: '', ultimoUsuario: r.nome1 || prev.comQuem || '', tipoKit: r.tipoKit || prev.tipoKit, iphone: r.iphone || prev.iphone, android: r.android || prev.android, tipoChip: r.tipoChip || prev.tipoChip, portSrt: r.portSrt || prev.portSrt });
                     }
                 });
 
@@ -1019,7 +1019,9 @@
             const emUso = k.emUso;
             const badge = emUso ? 'Em uso' : 'Disponivel';
             const nome = [k.tipoKit, k.iphone, k.android].filter(Boolean).join(' · ');
-            const detalhe = emUso ? `Com: ${k.pessoa}` : 'Livre';
+            const detalhe = emUso
+                ? `Com: ${k.comQuem}`
+                : k.ultimoUsuario ? `Ult: ${k.ultimoUsuario}` : 'Sem uso anterior';
             return `<div class="kit-card-sel${emUso ? ' em-uso' : ''}" onclick="${emUso ? '' : 'selecionarKitCard(this,' + i + ')'}" data-idx="${i}">
                 <span class="kc-badge">${badge}</span>
                 <div class="kc-nome">${nome}</div>
@@ -1111,10 +1113,10 @@
                     const ativasMap = new Map();
                     registros.forEach(r => {
                         if (r.tipo === 'ENTREGA') {
-                            const key = `${r.nome2}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                            const key = `${r.nome2}|${r.portSrt}|${r.tipoKit}|${r.iphone}|${r.android}`;
                             ativasMap.set(key, r);
                         } else if (r.tipo === 'DEVOLUÇÃO') {
-                            const key = `${r.nome1}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                            const key = `${r.nome1}|${r.portSrt}|${r.tipoKit}|${r.iphone}|${r.android}`;
                             ativasMap.delete(key);
                         }
                     });
