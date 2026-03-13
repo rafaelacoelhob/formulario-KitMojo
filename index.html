@@ -983,7 +983,7 @@
                 // Estado atual de cada kit físico (tipoKit+iphone+android)
                 const kitMap = new Map();
                 registros.forEach(r => {
-                    const key = `${r.portSrt}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                    const key = `${r.tipoKit}|${r.iphone}|${r.android}|${r.tipoChip}`;
                     if (r.tipo === 'ENTREGA') {
                         kitMap.set(key, { emUso: true, comQuem: r.nome2, ultimoUsuario: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, tipoChip: r.tipoChip, portSrt: r.portSrt });
                     } else if (r.tipo === 'DEVOLUÇÃO') {
@@ -1113,10 +1113,10 @@
                     const ativasMap = new Map();
                     registros.forEach(r => {
                         if (r.tipo === 'ENTREGA') {
-                            const key = `${r.nome2}|${r.portSrt}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                            const key = `${r.nome2}|${r.tipoKit}|${r.iphone}|${r.android}|${r.tipoChip}`;
                             ativasMap.set(key, r);
                         } else if (r.tipo === 'DEVOLUÇÃO') {
-                            const key = `${r.nome1}|${r.portSrt}|${r.tipoKit}|${r.iphone}|${r.android}`;
+                            const key = `${r.nome1}|${r.tipoKit}|${r.iphone}|${r.android}|${r.tipoChip}`;
                             ativasMap.delete(key);
                         }
                     });
