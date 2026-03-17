@@ -1566,7 +1566,7 @@
             <table>
                 <thead><tr>
                     <th>ID</th><th>Data Solicitacao</th><th>Quando</th><th>Onde</th>
-                    <th>Quem</th><th>Projeto</th><th>Obs</th><th>Status</th><th>Data Atendimento</th><th></th>
+                    <th>Quem</th><th>Projeto</th><th>Obs</th><th>Status</th><th>Data Entrega</th><th>Data Devolução</th><th></th>
                 </tr></thead>
                 <tbody id="tbSol"></tbody>
             </table>
@@ -3267,6 +3267,7 @@ function renderSolicitacoes() {
             <td style="max-width:150px;white-space:normal;font-size:12px">${s.observacao || '-'}</td>
             <td>${statusBadge}</td>
             <td>${fmtData(s.dataEntrega)}</td>
+            <td>${fmtData(s.dataDevolucao)}</td>
             <td>${acaoBotao}</td>
         </tr>`;
     }).join('');
