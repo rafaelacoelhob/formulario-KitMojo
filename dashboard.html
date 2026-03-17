@@ -1646,7 +1646,7 @@
 
 <script>
 // ===== CONFIG =====
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGeJGSYJrenU5EiblKLKdZ2UOPDI5ZPqHJRQ462MHlNnAydjm8r39rfOppHdFltVPX6g/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytTUHwyTq1DccZWjCW9yHRfBxtKQpsoOkhG9nrDyJ_eG3cLx0CnJQf4t28BtrvTj3PzA/exec';
 
 // TOTAL_KITS é calculado dinamicamente com base nos kits registrados
 
@@ -1810,7 +1810,7 @@ function calcKitStatus() {
                         tipo: 'KitMojo', iphone: '—', android: '—',
                         portSrt: '', tipoChip: '',
                         comQuem: s.quem, entregaPor: '—',
-                        dtEntrega: s.dataAtendimento || s.dataSolicitacao,
+                        dtEntrega: s.dataEntrega || s.dataSolicitacao,
                         localEntrega: s.onde || '',
                         conf: '', falt: '',
                         obs: (s.projeto || '') + (s.quando ? ' · ' + s.quando : ''),
@@ -3180,15 +3180,16 @@ async function loadSolicitacoes() {
                         return '';
                     });
                     return {
-                        id: (v[0] || '').trim(),
-                        dataSolicitacao: (v[1] || '').trim(),
-                        quando: (v[2] || '').trim(),
-                        onde: (v[3] || '').trim(),
-                        quem: (v[4] || '').trim(),
-                        projeto: (v[5] || '').trim(),
-                        observacao: (v[6] || '').trim(),
-                        status: (v[7] || '').trim(),
-                        dataAtendimento: (v[8] || '').trim()
+                        id: (v[9] || '').trim(),
+                        dataSolicitacao: (v[0] || '').trim(),
+                        quando: (v[1] || '').trim(),
+                        onde: (v[2] || '').trim(),
+                        quem: (v[3] || '').trim(),
+                        projeto: (v[4] || '').trim(),
+                        observacao: (v[5] || '').trim(),
+                        status: (v[6] || '').trim(),
+                        dataEntrega: (v[7] || '').trim(),
+                        dataDevolucao: (v[8] || '').trim()
                     };
                 }).filter(s => s.id);
                 loaded = solicitacoes.length > 0;
@@ -3265,7 +3266,7 @@ function renderSolicitacoes() {
             <td>${s.projeto || '-'}</td>
             <td style="max-width:150px;white-space:normal;font-size:12px">${s.observacao || '-'}</td>
             <td>${statusBadge}</td>
-            <td>${fmtData(s.dataAtendimento)}</td>
+            <td>${fmtData(s.dataEntrega)}</td>
             <td>${acaoBotao}</td>
         </tr>`;
     }).join('');
@@ -3799,7 +3800,7 @@ async function salvarAtendimento() {
     solicitacoes[atendendoSolIdx] = {
         ...s,
         status: 'Atendida',
-        dataAtendimento: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        dataEntrega: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
     };
 
     msg.className = 'edit-msg ok';
@@ -3831,10 +3832,11 @@ async function finalizarSolicitacao(idx) {
         console.warn('[KitMojo] Erro ao finalizar solicitacao:', e);
     }
 
+    // Atualizar local imediatamente
     solicitacoes[idx] = {
         ...s,
         status: 'Finalizada',
-        dataAtendimento: s.dataAtendimento || new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        dataDevolucao: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
     };
 
     renderSolicitacoes();

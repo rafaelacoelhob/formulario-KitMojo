@@ -161,16 +161,20 @@ function handleKitMojo(ss, dados) {
 }
 
 // === HANDLER: SOLICITACAO ===
+// Estrutura da aba Solicitacoes (10 colunas):
+// col1=Data Solicitação, col2=Quando, col3=Onde, col4=Quem, col5=Projeto,
+// col6=Observação, col7=Status (Pendente/Atendida), col8=Data Entrega,
+// col9=Data Devolução, col10=ID
 function handleSolicitacao(ss, dados) {
   var sheet = ss.getSheetByName('Solicitacoes');
 
   if (!sheet) {
     sheet = ss.insertSheet('Solicitacoes');
     sheet.appendRow([
-      'ID', 'Data Solicitacao', 'Quando', 'Onde', 'Quem', 'Projeto',
-      'Observacao', 'Status', 'Data Atendimento'
+      'Data Solicitação', 'Quando', 'Onde', 'Quem', 'Projeto',
+      'Observação', 'Status (Pendente/Atendida)', 'Data Entrega', 'Data Devolução', 'ID'
     ]);
-    var headerRange = sheet.getRange(1, 1, 1, 9);
+    var headerRange = sheet.getRange(1, 1, 1, 10);
     headerRange.setFontWeight('bold');
     headerRange.setBackground('#1a1a2e');
     headerRange.setFontColor('#ffffff');
@@ -179,15 +183,16 @@ function handleSolicitacao(ss, dados) {
   var id = 'SOL-' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyyMMddHHmmss');
 
   sheet.appendRow([
-    id,
-    dados.dataHora || new Date().toLocaleString('pt-BR'),
-    dados.quando || '',
-    dados.onde || '',
-    dados.quem || '',
-    dados.projeto || '',
-    dados.observacao || '',
-    'Pendente',
-    ''
+    dados.dataHora || new Date().toLocaleString('pt-BR'), // col1 = Data Solicitação
+    dados.quando || '',                                    // col2 = Quando
+    dados.onde || '',                                      // col3 = Onde
+    dados.quem || '',                                      // col4 = Quem
+    dados.projeto || '',                                   // col5 = Projeto
+    dados.observacao || '',                                // col6 = Observação
+    'Pendente',                                            // col7 = Status
+    '',                                                    // col8 = Data Entrega
+    '',                                                    // col9 = Data Devolução
+    id                                                     // col10 = ID
   ]);
 
   // Notifica o Slack
@@ -201,7 +206,9 @@ function handleSolicitacao(ss, dados) {
       + '*🕐 Solicitado em:* ' + (dados.dataHora || new Date().toLocaleString('pt-BR'));
 
     var webhookUrl = PropertiesService.getScriptProperties().getProperty('SLACK_WEBHOOK');
-    if (!webhookUrl) return;
+    if (!webhookUrl) return ContentService
+      .createTextOutput(JSON.stringify({ status: 'ok', id: id }))
+      .setMimeType(ContentService.MimeType.JSON);
     UrlFetchApp.fetch(webhookUrl, {
       method: 'post',
       contentType: 'application/json',
@@ -259,9 +266,9 @@ function marcarSolicitacaoAtendida(ss, solicitacaoId) {
 
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === solicitacaoId) {
-      sheet.getRange(i + 1, 8).setValue('Atendida');
-      sheet.getRange(i + 1, 9).setValue(new Date().toLocaleString('pt-BR'));
+    if (data[i][9] === solicitacaoId) {          // col10 (índice 9) = ID
+      sheet.getRange(i + 1, 7).setValue('Atendida');                        // col7 = Status
+      sheet.getRange(i + 1, 8).setValue(new Date().toLocaleString('pt-BR')); // col8 = Data Entrega
       break;
     }
   }
@@ -274,12 +281,9 @@ function marcarSolicitacaoFinalizada(ss, solicitacaoId) {
 
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === solicitacaoId) {
-      sheet.getRange(i + 1, 8).setValue('Finalizada');
-      // Mantém a data de atendimento original se já existir
-      if (!data[i][8]) {
-        sheet.getRange(i + 1, 9).setValue(new Date().toLocaleString('pt-BR'));
-      }
+    if (data[i][9] === solicitacaoId) {          // col10 (índice 9) = ID
+      sheet.getRange(i + 1, 7).setValue('Finalizada');                       // col7 = Status
+      sheet.getRange(i + 1, 9).setValue(new Date().toLocaleString('pt-BR')); // col9 = Data Devolução
       break;
     }
   }
@@ -302,15 +306,16 @@ function doGet(e) {
       var resultado = [];
       for (var i = 1; i < data.length; i++) {
         resultado.push({
-          id: data[i][0],
-          dataSolicitacao: data[i][1],
-          quando: data[i][2],
-          onde: data[i][3],
-          quem: data[i][4],
-          projeto: data[i][5],
-          observacao: data[i][6],
-          status: data[i][7],
-          dataAtendimento: data[i][8]
+          id: data[i][9],               // col10 = ID
+          dataSolicitacao: data[i][0],  // col1  = Data Solicitação
+          quando: data[i][1],           // col2  = Quando
+          onde: data[i][2],             // col3  = Onde
+          quem: data[i][3],             // col4  = Quem
+          projeto: data[i][4],          // col5  = Projeto
+          observacao: data[i][5],       // col6  = Observação
+          status: data[i][6],           // col7  = Status
+          dataEntrega: data[i][7],      // col8  = Data Entrega
+          dataDevolucao: data[i][8]     // col9  = Data Devolução
         });
       }
       return ContentService
