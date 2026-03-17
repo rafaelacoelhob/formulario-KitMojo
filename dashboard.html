@@ -261,6 +261,7 @@
         .b-ok  { background: var(--green-bg); color: var(--green); }
         .b-nok { background: var(--red-bg); color: var(--red); }
         .b-disp { background: var(--green-bg); color: var(--green); }
+        .b-fin { background: var(--blue-bg); color: var(--blue); }
 
         /* ===== KIT CARDS ===== */
         .kit-grid {
@@ -1549,6 +1550,7 @@
                 <option value="all">Todas</option>
                 <option value="Pendente">Pendentes</option>
                 <option value="Atendida">Atendidas</option>
+                <option value="Finalizada">Finalizadas</option>
             </select>
             <button class="btn-sm" onclick="loadSolicitacoes()">Atualizar</button>
         </div>
@@ -3208,6 +3210,7 @@ function renderSolicitacoes() {
     const total = solicitacoes.length;
     const pendentes = solicitacoes.filter(s => s.status === 'Pendente').length;
     const atendidas = solicitacoes.filter(s => s.status === 'Atendida').length;
+    const finalizadas = solicitacoes.filter(s => s.status === 'Finalizada').length;
 
     // KPIs
     document.getElementById('solKpis').innerHTML = `
@@ -3224,7 +3227,12 @@ function renderSolicitacoes() {
         <div class="kpi">
             <div class="kpi-top"><span class="kpi-label">Atendidas</span><div class="kpi-ico" style="background:var(--green-bg);color:var(--green)">A</div></div>
             <div class="kpi-val" style="color:var(--green)">${atendidas}</div>
-            <div class="kpi-sub">concluidas</div>
+            <div class="kpi-sub">kit em posse do colaborador</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-label">Finalizadas</span><div class="kpi-ico" style="background:var(--blue-bg);color:var(--blue)">F</div></div>
+            <div class="kpi-val" style="color:var(--blue)">${finalizadas}</div>
+            <div class="kpi-sub">kit devolvido</div>
         </div>
     `;
 
@@ -3237,10 +3245,17 @@ function renderSolicitacoes() {
 
     tb.innerHTML = lista.map(s => {
         const isPendente = s.status === 'Pendente';
-        const statusBadge = isPendente
-            ? '<span class="badge b-uso">Pendente</span>'
-            : '<span class="badge b-ok">Atendida</span>';
+        const isAtendida = s.status === 'Atendida';
+        const isFinalizada = s.status === 'Finalizada';
+        let statusBadge;
+        if (isPendente) statusBadge = '<span class="badge b-uso">Pendente</span>';
+        else if (isAtendida) statusBadge = '<span class="badge b-ok">Atendida</span>';
+        else if (isFinalizada) statusBadge = '<span class="badge b-fin">Finalizada</span>';
+        else statusBadge = `<span class="badge">${s.status}</span>`;
         const solIdx = solicitacoes.indexOf(s);
+        let acaoBotao = '-';
+        if (isPendente) acaoBotao = `<button class="btn-atender-row" onclick="openAtenderModal(${solIdx})">Atender</button>`;
+        else if (isAtendida) acaoBotao = `<button class="btn-atender-row" style="background:rgba(59,130,246,0.1);color:var(--blue);border-color:rgba(59,130,246,0.25)" onclick="finalizarSolicitacao(${solIdx})">Finalizar</button>`;
         return `<tr>
             <td style="font-weight:600;font-size:12px">${s.id || '-'}</td>
             <td>${fmtData(s.dataSolicitacao)}</td>
@@ -3251,7 +3266,7 @@ function renderSolicitacoes() {
             <td style="max-width:150px;white-space:normal;font-size:12px">${s.observacao || '-'}</td>
             <td>${statusBadge}</td>
             <td>${fmtData(s.dataAtendimento)}</td>
-            <td>${isPendente ? `<button class="btn-atender-row" onclick="openAtenderModal(${solIdx})">Atender</button>` : '-'}</td>
+            <td>${acaoBotao}</td>
         </tr>`;
     }).join('');
 
@@ -3794,6 +3809,35 @@ async function salvarAtendimento() {
 
     renderSolicitacoes();
     setTimeout(() => closeAtenderModal(), 1800);
+}
+
+// ===== FINALIZAR SOLICITACAO =====
+async function finalizarSolicitacao(idx) {
+    const s = solicitacoes[idx];
+    if (!s) return;
+    if (!confirm(`Confirmar devolução do kit da solicitação ${s.id}?\n\nIsso marcará a solicitação como Finalizada, indicando que o kit foi devolvido.`)) return;
+
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                acao: 'FINALIZAR_SOLICITACAO',
+                solicitacaoId: s.id
+            }),
+            redirect: 'follow',
+            mode: 'no-cors'
+        });
+    } catch (e) {
+        console.warn('[KitMojo] Erro ao finalizar solicitacao:', e);
+    }
+
+    solicitacoes[idx] = {
+        ...s,
+        status: 'Finalizada',
+        dataAtendimento: s.dataAtendimento || new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    };
+
+    renderSolicitacoes();
 }
 
 // ===== INIT =====
