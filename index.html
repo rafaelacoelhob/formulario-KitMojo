@@ -1110,7 +1110,8 @@
                             tipoChip: vals[8],
                             itensConferidos: vals[9],
                             itensFaltando: vals[10],
-                            observacao: vals[11]
+                            observacao: vals[11],
+                            solicitacaoId: vals[14]
                         };
                     });
 
@@ -1507,7 +1508,8 @@
                 foto: document.getElementById('img-devolucao').src,
                 dataHora: new Date().toLocaleString('pt-BR'),
                 numeroIphone: document.getElementById('devolucao-numeroIphone').value.trim(),
-                numeroAndroid: document.getElementById('devolucao-numeroAndroid').value.trim()
+                numeroAndroid: document.getElementById('devolucao-numeroAndroid').value.trim(),
+                solicitacaoId: (() => { const idx = document.getElementById('devolucao-entrega').value; return (idx !== '' && entregasAtivas[idx]) ? (entregasAtivas[idx].solicitacaoId || '') : ''; })()
             };
             document.getElementById('sucessoTitulo').textContent = 'Devolução Registrada!';
             document.getElementById('sucessoMsg').textContent = 'A devolução do KitMojo foi registrada com sucesso.';

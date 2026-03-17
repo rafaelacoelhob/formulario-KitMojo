@@ -147,7 +147,7 @@ function handleKitMojo(ss, dados) {
   }
 
   // Devolucao com solicitacaoId vinculado → finaliza automaticamente
-  if (dados.tipo === 'DEVOLUCAO' && dados.solicitacaoId) {
+  if ((dados.tipo === 'DEVOLUÇÃO' || dados.tipo === 'DEVOLUCAO') && dados.solicitacaoId) {
     try {
       marcarSolicitacaoFinalizada(ss, dados.solicitacaoId);
     } catch (e) {
