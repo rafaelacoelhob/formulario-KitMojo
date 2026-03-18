@@ -48,7 +48,7 @@ function handleEditRegistro(ss, dados) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  var data = sheet.getDataRange().getValues();
+  var data = sheet.getDataRange().getDisplayValues();
   var found = false;
 
   for (var i = 1; i < data.length; i++) {
