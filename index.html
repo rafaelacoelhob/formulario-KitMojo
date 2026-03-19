@@ -913,24 +913,41 @@
     // ===== SOLICITACOES PENDENTES =====
     let solicitacoesPendentes = [];
 
-    async function carregarSolicitacoes() {
-        try {
-            const resp = await fetch(GOOGLE_SCRIPT_URL + '?action=solicitacoesPendentes', { redirect: 'follow' });
-            if (resp.ok) {
-                const todas = await resp.json();
-                solicitacoesPendentes = Array.isArray(todas) ? todas.filter(s => s.status === 'Pendente') : [];
-            }
-        } catch (e) {
-            console.warn('Erro ao carregar solicitacoes:', e);
-            solicitacoesPendentes = [];
-        }
-        const sel = document.getElementById('entrega-solicitacao');
-        sel.innerHTML = '<option value="">Nenhuma (entrega sem solicitacao)</option>';
-        solicitacoesPendentes.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.quem + ' - ' + s.projeto + ' - ' + fmtData(s.quando) + ' (' + s.onde + ')';
-            sel.appendChild(opt);
+    function carregarSolicitacoes() {
+        return new Promise((resolve) => {
+            const cbName = '_kitmojoSolCb_' + Date.now();
+            window[cbName] = function(todas) {
+                try {
+                    solicitacoesPendentes = Array.isArray(todas) ? todas.filter(s => s.status === 'Pendente') : [];
+                } catch(e) {
+                    console.warn('Erro ao processar solicitacoes:', e);
+                    solicitacoesPendentes = [];
+                }
+                const sel = document.getElementById('entrega-solicitacao');
+                sel.innerHTML = '<option value="">Nenhuma (entrega sem solicitacao)</option>';
+                solicitacoesPendentes.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.quem + ' - ' + s.projeto + ' - ' + fmtData(s.quando) + ' (' + s.onde + ')';
+                    sel.appendChild(opt);
+                });
+                delete window[cbName];
+                const sc = document.getElementById('script_' + cbName);
+                if (sc) sc.remove();
+                resolve();
+            };
+            const script = document.createElement('script');
+            script.id = 'script_' + cbName;
+            script.src = GOOGLE_SCRIPT_URL + '?action=solicitacoesPendentes&callback=' + cbName;
+            script.onerror = () => {
+                console.warn('Erro ao carregar solicitacoes via JSONP');
+                solicitacoesPendentes = [];
+                const sel = document.getElementById('entrega-solicitacao');
+                sel.innerHTML = '<option value="">Nenhuma (entrega sem solicitacao)</option>';
+                delete window[cbName];
+                resolve();
+            };
+            document.body.appendChild(script);
         });
     }
 

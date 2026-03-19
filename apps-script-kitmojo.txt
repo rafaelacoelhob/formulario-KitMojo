@@ -296,11 +296,13 @@ function doGet(e) {
     var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : '';
 
     if (action === 'solicitacoesPendentes') {
+      var callback = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
       var sheet = ss.getSheetByName('Solicitacoes');
       if (!sheet) {
+        var emptyJson = JSON.stringify([]);
         return ContentService
-          .createTextOutput(JSON.stringify([]))
-          .setMimeType(ContentService.MimeType.JSON);
+          .createTextOutput(callback ? callback + '(' + emptyJson + ')' : emptyJson)
+          .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
       }
       var data = sheet.getDataRange().getDisplayValues();
       var resultado = [];
@@ -318,9 +320,10 @@ function doGet(e) {
           dataDevolucao: data[i][8]     // col9  = Data Devolução
         });
       }
+      var json = JSON.stringify(resultado);
       return ContentService
-        .createTextOutput(JSON.stringify(resultado))
-        .setMimeType(ContentService.MimeType.JSON);
+        .createTextOutput(callback ? callback + '(' + json + ')' : json)
+        .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
     }
 
     return ContentService
