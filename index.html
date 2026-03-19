@@ -1001,19 +1001,28 @@
 
                 registros.sort((a, b) => parseDataHora(a.dataHora) - parseDataHora(b.dataHora));
 
-                // Estado atual de cada kit físico (tipoKit+iphone+android)
-                const kitMap = new Map();
+                // Identifica cada kit físico pelo portSrt (único por kit).
+                // Para DEVOLUÇÃO (sem portSrt), usa mapeamento pessoa+specs → portSrt
+                // para achar qual kit físico foi devolvido sem afetar outros kits iguais.
+                const portSrtMap = new Map(); // portSrt → status do kit
+                const lastEntregaByPerson = new Map(); // `nome2|tipoKit|iphone|android|tipoChip` → portSrt
+
                 registros.forEach(r => {
-                    const key = `${r.tipoKit}|${r.iphone}|${r.android}|${r.tipoChip}`;
-                    if (r.tipo === 'ENTREGA') {
-                        kitMap.set(key, { emUso: true, comQuem: r.nome2, ultimoUsuario: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, tipoChip: r.tipoChip, portSrt: r.portSrt });
+                    if (r.tipo === 'ENTREGA' && r.portSrt) {
+                        const personKey = `${r.nome2}|${r.tipoKit}|${r.iphone}|${r.android}|${r.tipoChip}`;
+                        lastEntregaByPerson.set(personKey, r.portSrt);
+                        portSrtMap.set(r.portSrt, { emUso: true, comQuem: r.nome2, ultimoUsuario: r.nome2, tipoKit: r.tipoKit, iphone: r.iphone, android: r.android, tipoChip: r.tipoChip, portSrt: r.portSrt });
                     } else if (r.tipo === 'DEVOLUÇÃO') {
-                        const prev = kitMap.get(key) || {};
-                        kitMap.set(key, { emUso: false, comQuem: '', ultimoUsuario: r.nome1 || prev.comQuem || '', tipoKit: r.tipoKit || prev.tipoKit, iphone: r.iphone || prev.iphone, android: r.android || prev.android, tipoChip: r.tipoChip || prev.tipoChip, portSrt: r.portSrt || prev.portSrt });
+                        const personKey = `${r.nome1}|${r.tipoKit}|${r.iphone}|${r.android}|${r.tipoChip}`;
+                        const portSrt = lastEntregaByPerson.get(personKey) || r.portSrt;
+                        if (portSrt && portSrtMap.has(portSrt)) {
+                            const prev = portSrtMap.get(portSrt);
+                            portSrtMap.set(portSrt, { ...prev, emUso: false, comQuem: '', ultimoUsuario: r.nome1 || prev.comQuem || '' });
+                        }
                     }
                 });
 
-                const kits = [...kitMap.values()].sort((a, b) => (a.emUso ? 1 : 0) - (b.emUso ? 1 : 0));
+                const kits = [...portSrtMap.values()].sort((a, b) => (a.emUso ? 1 : 0) - (b.emUso ? 1 : 0));
                 renderKitsGrid(kits);
             } catch(e) {
                 document.getElementById('kitsGrid').innerHTML = '<span class="kits-loading-txt">Nao foi possivel carregar.</span>';
