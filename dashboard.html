@@ -1341,6 +1341,7 @@
     </div>
     <div class="sidebar-nav">
         <button class="nav-btn active" data-sec="geral"><span class="ico"></span> Visao Geral</button>
+        <button class="nav-btn" data-sec="disponivel"><span class="ico"></span> Disponivel</button>
         <button class="nav-btn" data-sec="kits"><span class="ico"></span> Status dos Kits</button>
         <button class="nav-btn" data-sec="conferencia"><span class="ico"></span> Conferencia</button>
         <button class="nav-btn" data-sec="faltando"><span class="ico"></span> Itens Faltando</button>
@@ -1362,6 +1363,7 @@
     <h1>KitMojo</h1>
     <div class="mob-nav" id="mobNav">
         <button class="on" data-sec="geral">Geral</button>
+        <button data-sec="disponivel">Disponivel</button>
         <button data-sec="kits">Kits</button>
         <button data-sec="conferencia">Conferir</button>
         <button data-sec="faltando">Faltando</button>
@@ -1454,6 +1456,13 @@
 </section>
 
 <!-- ========== STATUS DOS KITS ========== -->
+<section class="sec" id="sec-disponivel">
+    <div class="page-head">
+        <h2>Kits Disponíveis</h2>
+    </div>
+    <div class="ov-grid" id="ovGridDisp"></div>
+</section>
+
 <section class="sec" id="sec-kits">
     <div class="page-head">
         <h2>Status dos Kits</h2>
@@ -2058,7 +2067,7 @@ function filtrar() {
 }
 
 function renderAll() {
-    renderOverview(); renderCharts(); renderRecent();
+    renderOverview(); renderDisponivel(); renderCharts(); renderRecent();
     renderKits(); renderConferencia(); renderFaltando(); renderChartFalta();
     renderHist(); renderTL(); renderTransferencias();
 }
@@ -2124,7 +2133,11 @@ function renderOverview() {
         return;
     }
 
-    grid.innerHTML = kitList.map((kit, i) => {
+    const kitsEmUso = kitList.filter(k => k.st === 'uso');
+    if (!kitsEmUso.length) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ico">  </span><h3>Nenhum kit em uso no momento</h3><p>Todos os kits estão disponíveis. Veja a aba <strong>Disponivel</strong>.</p></div>`;
+    } else {
+    grid.innerHTML = kitsEmUso.map((kit, i) => {
         const emUso = kit.st === 'uso';
         const isSol = kit.fromSolicitacao === true;
         const itensRef = emUso ? kit.conf  : (kit.confDev || kit.conf);
@@ -2234,6 +2247,7 @@ function renderOverview() {
             </div>
         </div>`;
     }).join('');
+    } // end else
 
     // === Alertas ===
     const alerts = [];
@@ -2264,6 +2278,94 @@ function renderOverview() {
     } else {
         alertBox.style.display = 'none';
     }
+}
+
+// ===== DISPONIVEL =====
+function renderDisponivel() {
+    const kitList = calcKitStatus();
+    const kitsDisp = kitList.filter(k => k.st === 'disp');
+    const grid = document.getElementById('ovGridDisp');
+    if (!grid) return;
+
+    if (!kitsDisp.length) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="ico">  </span><h3>Nenhum kit disponível no momento</h3><p>Todos os kits estão em uso.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = kitsDisp.map((kit, i) => {
+        const isSol = kit.fromSolicitacao === true;
+        const conf = kit.confDev ? kit.confDev.split(',').filter(x => x.trim()).length : (kit.conf ? kit.conf.split(',').filter(x => x.trim()).length : 0);
+        const pct = isSol ? 0 : Math.round(conf / ITENS.length * 100);
+        const barColor = pct === 100 ? 'var(--green)' : pct >= 80 ? 'var(--yellow)' : 'var(--red)';
+        const faltList = (kit.faltDev || kit.falt || '').trim() ? (kit.faltDev || kit.falt).split(',').map(x => x.trim()).filter(Boolean) : [];
+
+        return `<div class="ov-kit">
+            <div class="ov-kit-top">
+                <div>
+                    <div class="ov-kit-num">Kit #${i + 1}</div>
+                    <div class="ov-kit-title">${kit.tipo || 'KitMojo'}</div>
+                </div>
+                <div class="ov-kit-status disp">
+                    <span class="pulse"></span>
+                    Disponivel
+                </div>
+            </div>
+            <div class="ov-kit-body">
+                <div class="ov-kit-phones">
+                    <div class="ov-phone">
+                        <span class="ph-ico"></span>
+                        <div><div style="font-size:10px;color:var(--text2)">iPhone</div><strong>${kit.iphone || '-'}</strong>${kit.numeroIphone ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">${kit.numeroIphone}</div>` : ''}</div>
+                    </div>
+                    <div class="ov-phone">
+                        <span class="ph-ico"></span>
+                        <div><div style="font-size:10px;color:var(--text2)">Android</div><strong>${kit.android || '-'}</strong>${kit.numeroAndroid ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">${kit.numeroAndroid}</div>` : ''}</div>
+                    </div>
+                </div>
+
+                ${kit.portSrt || kit.tipoChip ? `<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);margin-bottom:14px;font-size:13px;flex-wrap:wrap">
+                    ${kit.portSrt ? `<span style="color:var(--text2)">Port SRT</span><strong style="color:var(--cyan)">${kit.portSrt}</strong>` : ''}
+                    ${kit.tipoChip ? `<span style="margin-left:${kit.portSrt ? 'auto' : '0'};padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;${kit.tipoChip === 'eSIM' ? 'background:rgba(168,85,247,0.15);color:var(--purple)' : 'background:rgba(245,158,11,0.15);color:var(--yellow)'}">${kit.tipoChip === 'eSIM' ? 'eSIM' : 'Fisico'}</span>` : ''}
+                </div>` : ''}
+
+                <div class="ov-kit-info">
+                    <div class="ov-kit-row">
+                        <span class="lbl">Devolvido por</span>
+                        <span class="val">${kit.devPor || '-'}</span>
+                    </div>
+                    <div class="ov-kit-row">
+                        <span class="lbl">Recebido por</span>
+                        <span class="val">${kit.recPor || '-'}</span>
+                    </div>
+                    <div class="ov-kit-row">
+                        <span class="lbl">Devolvido em</span>
+                        <span class="val">${kit.dtDevolucao || '-'}</span>
+                    </div>
+                    ${kit.localDevolucao ? `<div class="ov-kit-row"><span class="lbl">Local dev.</span><span class="val" style="color:var(--blue);font-weight:600">${kit.localDevolucao}</span></div>` : ''}
+                    <div class="ov-kit-row">
+                        <span class="lbl">Movimentacoes</span>
+                        <span class="val">${kit.historico || 0}x</span>
+                    </div>
+                </div>
+
+                ${!isSol ? `<div class="ov-kit-bar">
+                    <div class="ov-bar-lbl">
+                        <span style="color:var(--text2)">Itens conferidos na devolução</span>
+                        <span style="color:${barColor};font-weight:700">${conf}/${ITENS.length}</span>
+                    </div>
+                    <div class="ov-bar-track">
+                        <div class="ov-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+                    </div>
+                </div>
+
+                ${faltList.length ? `<div class="ov-kit-alert">
+                    <strong>! ${faltList.length} ite${faltList.length > 1 ? 'ns faltando' : 'm faltando'}:</strong>
+                    ${faltList.join(', ')}
+                </div>` : ''}` : ''}
+
+                ${kit.obs ? `<div style="margin-top:8px;font-size:12px;color:var(--text2);font-style:italic">Obs: ${kit.obs}</div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // ===== CHARTS =====
